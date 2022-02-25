@@ -1,0 +1,30 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+        <title>FlowJS Tutorial</title>
+        <script src="lib/CriterionEngine/math.js"></script>
+        <script src="lib/CriterionEngine/criterion.js"></script>
+        <script src="lib/CriterionEngine/criterion-utils.js"></script>
+        <script src="js/crawler.js"></script>
+        <script src="main.js" defer></script>
+        <!-- <script src="main.js" defer></script> -->
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            @media only screen and (max-width: 600px) and (orientation:portrait) {
+                body {
+                    height: 100vw;
+                    transform: rotate(90deg);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div style="width:100vw; height: 100vh;">
+            <canvas style="width: 100%; height: 100%;"></canvas>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,46 @@
+# Blender MTL File: 'None'
+# Material Count: 4
+
+newmtl Material__136
+Ns 10.000002
+Ka 1.000000 1.000000 1.000000
+Kd 0.588000 0.588000 0.588000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd C:\\Users\\brand\\OneDrive\\Documents\\Visual Studio Code\\NodeJS\\WebGL\\resources\\models\\Ratchet\\Texture0.png
+
+newmtl Material__137
+Ns 10.000002
+Ka 1.000000 1.000000 1.000000
+Kd 0.588000 0.588000 0.588000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd C:\\Users\\brand\\OneDrive\\Documents\\Visual Studio Code\\NodeJS\\WebGL\\resources\\models\\Ratchet\\Texture1.png
+
+newmtl Material__150
+Ns 10.000002
+Ka 1.000000 1.000000 1.000000
+Kd 0.588000 0.588000 0.588000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd C:\\Users\\brand\\OneDrive\\Documents\\Visual Studio Code\\NodeJS\\WebGL\\resources\\models\\Ratchet\\Texture2.png
+
+newmtl Material__163
+Ns 10.000002
+Ka 1.000000 1.000000 1.000000
+Kd 0.588000 0.588000 0.588000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd C:\\Users\\brand\\OneDrive\\Documents\\Visual Studio Code\\NodeJS\\WebGL\\resources\\models\\Ratchet\\Texture3.png
