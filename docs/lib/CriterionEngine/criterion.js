@@ -282,6 +282,7 @@ class CriterionEngine {
     #running = false;
     #canvas;
     #gl;
+    static #instance;
     constructor(options) {
         if (this.constructor === CriterionEngine) {
             throw new TypeError('CriterionEngine is an abstract class');
@@ -294,6 +295,9 @@ class CriterionEngine {
         this.#deltaTime = 0;
         if (!this.isSupported)
             throw new CriterionError("WebGL2 is not supported");
+    }
+    static get instance() {
+        return this.#instance;
     }
     get isSupported() {
         return this.gl !== undefined;
@@ -328,6 +332,7 @@ class CriterionEngine {
     async launch() {
         if (!this.isSupported)
             throw new CriterionError("WebGL2 is not supported");
+        CriterionEngine.#instance = this;
         this.#logger = new CriterionEngineLogger(this);
         this.#resourceManager = new CriterionResourceManager(this);
         this.#memoryManager = new CriterionMemmoryManager(this);
@@ -491,50 +496,60 @@ class CriterionSceneManager {
         this.#unloadQueue.clear();
     }
 }
-class CriterionBlueprint {
-    static components() {
-        return [];
-    }
-    static entities(scene) {
-        return scene.entities(...this.components());
-    }
-    static createEntity(entity) {
-        return entity.includes(...this.components());
-    }
-}
 class CriterionEntity {
     #scene;
-    id;
+    #id;
+    #components;
     constructor(id, scene) {
         this.#scene = scene;
-        this.id = id;
+        this.#id = id;
+        this.#components = new Map();
     }
     get scene() {
         return this.#scene;
     }
+    get components() {
+        return this.#components;
+    }
+    /** Gets the entity's component of the given type */
+    get(componentType) {
+        return this.#components.get(componentType);
+    }
+    /** Returns the entity's component of the given type or adds a new component if it doesn't exist */
     add(componentType) {
-        return this.#scene.addComponent(this.id, componentType);
-    }
-    adds(...componentTypes) {
-        let components = new Map();
-        for (let componentType of componentTypes)
-            components.set(componentType, this.add(componentType));
-        return components;
-    }
-    include(componentType) {
-        let component = this.#scene.component(this.id, componentType);
-        if (component != null)
+        let registered = this.#scene.registeredComponent(componentType);
+        if (!registered) {
+            this.#scene.engine.logger.warn(`${componentType.name} is not a registered component and cannot be added`);
+            return undefined;
+        }
+        let component = this.#components.get(componentType);
+        if (component !== undefined)
             return component;
-        return this.#scene.addComponent(this.id, componentType);
+        component = new componentType();
+        this.#components.set(componentType, component);
+        return component;
     }
-    includes(...componentTypes) {
-        let components = new Map();
-        for (let componentType of componentTypes)
-            components.set(componentType, this.include(componentType));
-        return components;
+    /** Sets the component of the entity to a specific value */
+    set(componentType, component) {
+        let registered = this.#scene.registeredComponent(componentType);
+        if (!registered) {
+            this.#scene.engine.logger.warn(`${componentType.name} is not a registered component and cannot be added`);
+            return undefined;
+        }
+        this.#components.set(componentType, component);
+        return component;
     }
-    component(componentTpe) {
-        return this.#scene.component(this.id, componentTpe);
+    /** Removes the entity's component of the given type if it exist */
+    remove(componentType) {
+        let component = this.#components.get(componentType);
+        if (component === undefined)
+            return undefined;
+        this.#components.delete(componentType);
+        return component;
+    }
+    /** Tells the scene to remove the entity */
+    destroy() {
+        this.#scene.destroyEntity(this.#id);
     }
 }
 class CriterionComponent {
@@ -556,16 +571,16 @@ class CriterionScene {
     #loaded;
     #nextEntityId;
     #entities;
+    #componentTypes;
     #destroyedEntities;
-    #components;
     #systems;
     constructor(engine) {
         this.#engine = engine;
         this.#loaded = false;
         this.#nextEntityId = 0;
-        this.#entities = new Set();
+        this.#entities = new Map();
+        this.#componentTypes = new Set();
         this.#destroyedEntities = new Set();
-        this.#components = new Map();
         this.#systems = new Map();
     }
     get engine() {
@@ -590,8 +605,7 @@ class CriterionScene {
         for (let entityId of this.#destroyedEntities) {
             if (!this.#entities.has(entityId))
                 return;
-            for (let components of this.#components.values())
-                components.delete(entityId);
+            this.#entities.delete(entityId);
         }
     }
     system(systemType) {
@@ -617,126 +631,116 @@ class CriterionScene {
             return system;
         }
     }
-    /** Returns the list of components attached to that entity */
+    get registeredComponents() {
+        return [...this.#componentTypes];
+    }
+    registeredComponent(componentType) {
+        return this.#componentTypes.has(componentType);
+    }
+    /** Registers a component to be tracked by the engine (otherwise the component can't be added to entities)*/
+    registerComponent(componentType) {
+        this.#componentTypes.add(componentType);
+    }
+    /** Returns a list of entities that have the specified components */
     entity(entityId) {
-        if (!this.#entities.has(entityId))
-            return null;
-        let entity = new Map();
-        for (let componentType of this.#components.keys()) {
-            let component = this.#components.get(componentType);
-            if (component != null)
-                entity.set(componentType, component);
-        }
-        return entity;
+        return this.#entities.get(entityId);
     }
     /** Returns a map of entities that matches the set of components */
     entities(...componentTypes) {
-        let entities = new Map();
-        //Grab a list of entities that have these components
-        for (let type of componentTypes) {
-            let components = this.#components.get(type);
-            //If component list doesn't exist, then we have no components that match this constraint;
-            if (components === undefined)
-                return new Map();
-            for (let id of components.keys()) {
-                let entity = entities.get(id);
-                if (entity === undefined) {
-                    entity = new Map();
-                    entities.set(id, entity);
+        let entities = [];
+        for (let entity of this.#entities.values()) {
+            let passed = true;
+            for (let type of componentTypes) {
+                if (!entity.get(type)) {
+                    passed = false;
+                    break;
                 }
-                entity.set(type, components.get(id));
             }
-        }
-        //Prune out any entities that did not have all the components
-        for (let entity of entities.keys()) {
-            if (entities.get(entity).size < componentTypes.length)
-                entities.delete(entity);
+            if (passed)
+                entities.push(entity);
         }
         return entities;
     }
     /** Creates a new instance of an entity */
     createEntity() {
         let id = this.#nextEntityId++;
-        this.#entities.add(id);
-        return new CriterionEntity(id, this);
+        let entity = new CriterionEntity(id, this);
+        this.#entities.set(id, entity);
+        return entity;
     }
     destroyEntity(entityId) {
         this.#destroyedEntities.add(entityId);
     }
-    /** Gets an entity's component */
-    component(entityId, componentTpe) {
-        let components = this.#components.get(componentTpe);
-        if (components === undefined)
-            return undefined;
-        let component = components.get(entityId);
-        return component;
+}
+class CriterionBlueprintTemplate {
+    static requiredComponents() {
+        return [];
     }
-    /** Gets a list of all entities with the component */
-    components(componentType) {
-        let components = this.#components.get(componentType);
-        if (components == null)
-            return new Map();
-        let results = new Map();
-        for (let entityId of components.keys())
-            results.set(entityId, components.get(entityId));
-        return results;
+}
+class CriterionBlueprint {
+    #entity;
+    constructor(entity) {
+        this.#entity = entity;
     }
-    /** Adds a component to an entity */
-    addComponent(entityId, component) {
-        if (!this.#entities.has(entityId)) {
-            this.#engine.logger.warn(`Entity of id: ${entityId} does not exist`);
-            return undefined;
-        }
-        if (component == null) {
-            this.#engine.logger.warn("Component is empty");
-            return undefined;
-        }
-        if (component instanceof CriterionComponent) {
-            let type = component.constructor;
-            let components = this.#components.get(type);
-            if (components == null) {
-                components = new Map();
-                this.#components.set(type, components);
-            }
-            components.set(entityId, component);
-            return component;
-        }
-        else {
-            let type = component;
-            let components = this.#components.get(type);
-            component = new component();
-            if (components == null) {
-                components = new Map();
-                this.#components.set(type, components);
-            }
-            components.set(entityId, component);
-            return component;
+    #mapPropertiesToEntityComponents() {
+        let registeredComponents = this.#entity.scene.registeredComponents;
+        for (let componentType of registeredComponents) {
+            let componentName = componentType.name.toLowerCase();
+            let endsWithComponent = componentName.lastIndexOf("component");
+            let namingConvention = endsWithComponent < 0
+                ? componentName
+                : componentName.substring(0, endsWithComponent);
+            //If we find a property with the name that matches the convention:
+            // "[NAME]Component" or the name of the component, lets override to map to the component for easy editing
+            if (this.hasOwnProperty(namingConvention))
+                this.#mapPropertyToComponent(namingConvention, componentType);
         }
     }
-    removeComponent(entityId, component) {
-        if (!this.#entities.has(entityId)) {
-            this.#engine.logger.warn(`Entity of id: ${entityId} does not exist`);
-            return undefined;
+    #mapPropertyToComponent(propertyName, componentType) {
+        if (this.hasOwnProperty(propertyName)) {
+            Object.defineProperty(this, propertyName, {
+                get() {
+                    return this.#entity.get(componentType);
+                },
+                set(value) {
+                    this.#entity.set(value, componentType);
+                }
+            });
         }
-        if (component == null) {
-            this.#engine.logger.warn("Component is empty");
-            return undefined;
+    }
+    get entity() {
+        return this.#entity;
+    }
+    load() {
+        this.#mapPropertiesToEntityComponents();
+        return this;
+    }
+    static createDummy(scene, blueprintType) {
+        return new blueprintType(new CriterionEntity(-1, scene));
+    }
+    static entities(scene, blueprintType) {
+        let dummyBlueprint = CriterionBlueprint.createDummy(scene, blueprintType);
+        return scene.entities(...dummyBlueprint.requiredComponents());
+    }
+    static blueprints(scene, blueprintType) {
+        let dummyBlueprint = CriterionBlueprint.createDummy(scene, blueprintType);
+        let entities = scene.entities(...dummyBlueprint.requiredComponents());
+        let blueprints = [];
+        for (let entity of entities) {
+            let blueprint = new blueprintType(entity).load();
+            blueprints.push(blueprint);
         }
-        if (component instanceof CriterionComponent) {
-            let type = component.constructor;
-            let components = this.#components.get(type);
-            if (components == null || components.get(entityId) !== component)
-                return false;
-            return components.delete(entityId);
+        return blueprints;
+    }
+    static createEntity(entity, blueprintType) {
+        if (entity instanceof CriterionScene)
+            entity = entity.createEntity();
+        let blueprint = new blueprintType(entity);
+        blueprint.load();
+        for (let componentType of (blueprint.requiredComponents())) {
+            entity.add(componentType);
         }
-        else {
-            let type = component;
-            let components = this.#components.get(type);
-            component = new component();
-            if (components == null)
-                return false;
-            return components.delete(entityId);
-        }
+        return blueprint;
     }
 }
 //======== Memory Manager =============//
@@ -902,6 +906,42 @@ class CriterionMemmoryManager {
         this.#shaders.add(shader);
         return shader;
     }
+    get maxTextures() {
+        return this.#engine.gl.getParameter(this.#engine.gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS);
+    }
+    createTexture() {
+        const texture = this.#engine.gl.createTexture();
+        this.#textures.add(texture);
+        return texture;
+    }
+    bindTexture(texture) {
+        this.#engine.gl.bindTexture(this.#engine.gl.TEXTURE_2D, texture);
+    }
+    useTexture(index) {
+        this.#engine.gl.activeTexture(index);
+    }
+    bufferTexture(level, width, height, image) {
+        let border = 0;
+        //@ts-ignore
+        this.#engine.gl.texImage2D(this.#engine.gl.TEXTURE_2D, level, this.#engine.gl.RGBA, width, height, border, this.#engine.gl.RGBA, this.#engine.gl.UNSIGNED_BYTE);
+        const isPowerOf2 = function isPowerOf2(value) {
+            return (value & (value - 1)) == 0;
+        };
+        // WebGL1 has different requirements for power of 2 images
+        // vs non power of 2 images so check if the image is a
+        // power of 2 in both dimensions.
+        if (isPowerOf2(width) && isPowerOf2(height)) {
+            // Yes, it's a power of 2. Generate mips.
+            this.#engine.gl.generateMipmap(this.#engine.gl.TEXTURE_2D);
+        }
+        else {
+            // No, it's not a power of 2. Turn off mips and set
+            // wrapping to clamp to edge
+            this.#engine.gl.texParameteri(this.#engine.gl.TEXTURE_2D, this.#engine.gl.TEXTURE_WRAP_S, this.#engine.gl.CLAMP_TO_EDGE);
+            this.#engine.gl.texParameteri(this.#engine.gl.TEXTURE_2D, this.#engine.gl.TEXTURE_WRAP_T, this.#engine.gl.CLAMP_TO_EDGE);
+            this.#engine.gl.texParameteri(this.#engine.gl.TEXTURE_2D, this.#engine.gl.TEXTURE_MIN_FILTER, this.#engine.gl.LINEAR);
+        }
+    }
 }
 class CriterionKeyboardKeys {
     static altLeft = "AltLeft";
@@ -1013,28 +1053,3 @@ class CriterionMouseButtons {
     static buttonMiddle = 2;
     static buttonRight = 3;
 }
-// class TransformComponent extends CriterionComponent
-// {
-//     x: 0;
-//     y: 0;
-// }
-// class MeshComponent extends CriterionComponent
-// {
-//     texture: 0;
-// }
-// class PlayerBlueprint extends CriterionBlueprint
-// {
-//     static components(): (new () => CriterionComponent)[] {
-//         return [TransformComponent, MeshComponent];
-//     }
-// }
-// let scene = new CriterionScene(null);
-// let entity = scene.createEntity();
-// let components = PlayerBlueprint.createEntity(entity);
-// let transform = components.get(TransformComponent) as TransformComponent;
-// for(let entity of scene.entities(TransformComponent, MeshComponent).values())
-// {
-//     let transform = entity.get(TransformComponent) as TransformComponent;
-//     let mesh = entity.get(MeshComponent) as MeshComponent;
-//     console.log(transform.x + mesh.texture);
-// }

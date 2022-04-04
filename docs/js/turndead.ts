@@ -1,6 +1,4 @@
-// import { CriterionEngine, CriterionEngineOptions } from "../lib/CriterionEngine/criterion.js";
-
-class CrawlerGame extends CriterionEngine {
+class TurnDeadGame extends CriterionEngine {
     constructor(options: CriterionEngineOptions) {
         super(options);
     }
