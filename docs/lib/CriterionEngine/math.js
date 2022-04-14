@@ -144,6 +144,30 @@ class Vector4f {
     set w(value) {
         this.#array[3] = value;
     }
+    get r() {
+        return this.#array[0];
+    }
+    set r(value) {
+        this.#array[0] = value;
+    }
+    get g() {
+        return this.#array[1];
+    }
+    set g(value) {
+        this.#array[1] = value;
+    }
+    get b() {
+        return this.#array[2];
+    }
+    set b(value) {
+        this.#array[2] = value;
+    }
+    get a() {
+        return this.#array[3];
+    }
+    set a(value) {
+        this.#array[3] = value;
+    }
     magnitudeSquared() {
         return this.x * this.x + this.y * this.y + this.z * this.z + this.w * this.w;
     }
@@ -169,6 +193,9 @@ class Vector4f {
     divide = function (scalar) {
         return this.scale(1 / scalar);
     };
+    equals(vector) {
+        return this.x == vector.x && this.y == vector.y && this.z == vector.z && this.w == vector.w;
+    }
 }
 //Matrix3f====================
 class Matrix3f {

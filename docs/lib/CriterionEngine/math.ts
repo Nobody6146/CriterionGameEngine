@@ -158,6 +158,30 @@ class Vector4f {
     set w(value:number) {
         this.#array[3] = value;
     }
+    get r() {
+        return this.#array[0];
+    }
+    set r(value:number) {
+        this.#array[0] = value;
+    }
+    get g() {
+        return this.#array[1];
+    }
+    set g(value:number) {
+        this.#array[1] = value;
+    }
+    get b() {
+        return this.#array[2];
+    }
+    set b(value:number) {
+        this.#array[2] = value;
+    }
+    get a() {
+        return this.#array[3];
+    }
+    set a(value:number) {
+        this.#array[3] = value;
+    }
     magnitudeSquared(): number {
         return this.x * this.x + this.y * this.y + this.z * this.z + this.w * this.w;
     }
@@ -182,6 +206,9 @@ class Vector4f {
     }
     divide = function(scalar:number): Vector4f {
         return this.scale(1 / scalar);
+    }
+    equals(vector:Vector4f):boolean {
+        return this.x == vector.x && this.y == vector.y && this.z == vector.z && this.w == vector.w;
     }
 }
 

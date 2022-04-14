@@ -9,6 +9,10 @@ class TransformComponent extends CriterionComponent {
         this.rotation = new Vector3f();
         this.scale = new Vector3f([1,1,1]);
     }
+
+    get transformation():Matrix4f {
+        return Matrix4f.transformation(this.position, this.rotation, this.scale);
+    }
 }
 
 class RendererComponent extends CriterionComponent
@@ -37,6 +41,36 @@ class CameraComponent extends CriterionComponent
     }
 }
 
+class MeshComponent extends CriterionComponent
+{
+    vertices:Vector3f[];
+    textureCoordinates:Vector2f[];
+    normals:Vector3f[];
+
+    constructor() {
+        super();
+        this.vertices = [];
+        this.textureCoordinates = [];
+        this.normals = [];
+    }
+
+    transformedVertices(transformation:Matrix4f):Vector3f[] {
+        let results:Vector3f[] = [];
+        for(let vertex of this.vertices) {
+            results.push(new Vector3f(transformation.multiplyVector(new Vector4f([...vertex.array, 1])).array));
+        }
+        return results;
+    }
+
+    transformedTextureCoordinates(frameStart:Vector2f, frameSize:Vector2f):Vector2f[] {
+        let results:Vector2f[] = [];
+        for(let coordinate of this.textureCoordinates) {
+            results.push(new Vector2f([frameStart.x + coordinate.x * frameSize.x, frameStart.y + coordinate.y * frameSize.y]));
+        }
+        return results;
+    }
+}
+
 class SpriteComponent extends CriterionComponent {
     #spriteSheet:SpriteSheet;
     #texture:WebGLTexture;
@@ -62,6 +96,16 @@ class SpriteComponent extends CriterionComponent {
     }
     get currentFrame():number {
         return this.#currentFrame;
+    }
+    get frameOffset():Vector2f {
+        return this.#spriteSheet != null
+            ? this.#spriteSheet.getFrame(this.#currentFrame)
+            : new Vector2f([0, 0]);
+    }
+    get frameSize():Vector2f {
+        return this.#spriteSheet != null
+            ? new Vector2f([this.#spriteSheet.frameWidth, this.#spriteSheet.frameHeight])
+            : new Vector2f([1, 1]);
     }
 
     setCurrentFrame(frame:number):number {

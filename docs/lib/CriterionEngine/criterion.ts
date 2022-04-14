@@ -101,6 +101,17 @@ class CriterionWindow {
         this.#engine.gl.viewport(0, 0, this.#engine.canvas.width, this.#engine.canvas.height);
         this.#engine.gl.clear(this.#engine.gl.COLOR_BUFFER_BIT | this.#engine.gl.DEPTH_BUFFER_BIT);
     }
+    enableAlphaBlending(toggle:boolean):void {
+        if(toggle === true)
+        {
+            this.#engine.gl.enable(this.#engine.gl.BLEND);
+            this.#engine.gl.blendFunc(this.#engine.gl.SRC_ALPHA, this.#engine.gl.ONE_MINUS_SRC_ALPHA);
+        }
+        else
+        {
+            this.#engine.gl.disable(this.#engine.gl.BLEND);
+        }
+    }
     enableDepthTest(toggle:boolean) {
         if(toggle === true)
             this.#engine.gl.enable(this.#engine.gl.DEPTH_TEST);
@@ -981,21 +992,44 @@ class CriterionMemmoryManager
     stopShaderProgram() {
         return this.startShaderProgram(null);
     }
-    setUniform(uniformLocation:WebGLUniformLocation, data:number | Vector2f | Vector3f | Vector4f | Matrix3f | Matrix4f) {
+    setUniform(uniformLocation:WebGLUniformLocation, data:number | Vector2f | Vector3f | Vector4f | Matrix3f | Matrix4f, uniformDataType: "integer" | "float" = "float") {
         if(typeof data === 'number')
-            this.#engine.gl.uniform1f(uniformLocation, data);
+        {
+            if(uniformDataType === "float")
+                this.#engine.gl.uniform1f(uniformLocation, data);
+            else
+                this.#engine.gl.uniform1i(uniformLocation, data);
+        }  
         else if(data instanceof Vector2f)
-            this.#engine.gl.uniform2fv(uniformLocation, data.array);
+        {
+            if(uniformDataType === "float")
+                this.#engine.gl.uniform2fv(uniformLocation, data.array);
+            else
+                this.#engine.gl.uniform2iv(uniformLocation, data.array);
+        }
         else if(data instanceof Vector3f)
-            this.#engine.gl.uniform3fv(uniformLocation, data.array);
+        {
+            if(uniformDataType === "float")
+                this.#engine.gl.uniform3fv(uniformLocation, data.array);
+            else
+                this.#engine.gl.uniform3iv(uniformLocation, data.array);
+        }                
         else if(data instanceof Vector4f)
-            this.#engine.gl.uniform4fv(uniformLocation, data.array);
+        {
+            if(uniformDataType === "float")
+                this.#engine.gl.uniform4fv(uniformLocation, data.array);
+            else
+                this.#engine.gl.uniform4iv(uniformLocation, data.array);
+        }
         else if(data instanceof Matrix3f)
+        {
             this.#engine.gl.uniformMatrix3fv(uniformLocation, false, data.array);
-        else if(data instanceof Matrix4f)
+        }
+        else if(data instanceof Matrix4f){
             this.#engine.gl.uniformMatrix4fv(uniformLocation, false, data.array);
+        }
     }
-    createShaderProgram(vertexShaderSource:string, fragmentShaderSource:string, attributeLocations?:Map<string, number>, uniformNames?:string[]): {shaderProgram:WebGLProgram, uniformLocations:Map<string,WebGLUniformLocation>} {
+    createShaderProgram(vertexShaderSource:string, fragmentShaderSource:string, attributeLocations:Map<string, number> = new Map(), uniformNames:string[] = []): {shaderProgram:WebGLProgram, uniformLocations:Map<string,WebGLUniformLocation>, attributes:Map<string, number>} {
         let vertexShader = this.#createVertexShader(vertexShaderSource);
         let fragmentShader = this.#createFragmentShader(fragmentShaderSource);
         const program = this.#engine.gl.createProgram();
@@ -1027,7 +1061,8 @@ class CriterionMemmoryManager
 
         return {
             shaderProgram: program,
-            uniformLocations: uniforms
+            uniformLocations: uniforms,
+            attributes: attributeLocations
         };
     }
     #createVertexShader(source:string): WebGLShader {
@@ -1090,7 +1125,7 @@ class CriterionMemmoryManager
     bufferTexture(level: number, width: number, height: number, image: Uint8Array | HTMLImageElement) {
         let border = 0;
         //@ts-ignore
-        this.#engine.gl.texImage2D(this.#engine.gl.TEXTURE_2D, level, this.#engine.gl.RGBA, width, height, border, this.#engine.gl.RGBA, this.#engine.gl.UNSIGNED_BYTE, );
+        this.#engine.gl.texImage2D(this.#engine.gl.TEXTURE_2D, level, this.#engine.gl.RGBA, width, height, border, this.#engine.gl.RGBA, this.#engine.gl.UNSIGNED_BYTE, image);
 
         const isPowerOf2 = function isPowerOf2(value) {
             return (value & (value - 1)) == 0;

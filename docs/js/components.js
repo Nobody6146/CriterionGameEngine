@@ -8,6 +8,9 @@ class TransformComponent extends CriterionComponent {
         this.rotation = new Vector3f();
         this.scale = new Vector3f([1, 1, 1]);
     }
+    get transformation() {
+        return Matrix4f.transformation(this.position, this.rotation, this.scale);
+    }
 }
 class RendererComponent extends CriterionComponent {
     color;
@@ -27,6 +30,31 @@ class CameraComponent extends CriterionComponent {
         super();
         this.projection = Matrix4f.identity();
         this.view = Matrix4f.identity();
+    }
+}
+class MeshComponent extends CriterionComponent {
+    vertices;
+    textureCoordinates;
+    normals;
+    constructor() {
+        super();
+        this.vertices = [];
+        this.textureCoordinates = [];
+        this.normals = [];
+    }
+    transformedVertices(transformation) {
+        let results = [];
+        for (let vertex of this.vertices) {
+            results.push(new Vector3f(transformation.multiplyVector(new Vector4f([...vertex.array, 1])).array));
+        }
+        return results;
+    }
+    transformedTextureCoordinates(frameStart, frameSize) {
+        let results = [];
+        for (let coordinate of this.textureCoordinates) {
+            results.push(new Vector2f([frameStart.x + coordinate.x * frameSize.x, frameStart.y + coordinate.y * frameSize.y]));
+        }
+        return results;
     }
 }
 class SpriteComponent extends CriterionComponent {
@@ -52,6 +80,16 @@ class SpriteComponent extends CriterionComponent {
     }
     get currentFrame() {
         return this.#currentFrame;
+    }
+    get frameOffset() {
+        return this.#spriteSheet != null
+            ? this.#spriteSheet.getFrame(this.#currentFrame)
+            : new Vector2f([0, 0]);
+    }
+    get frameSize() {
+        return this.#spriteSheet != null
+            ? new Vector2f([this.#spriteSheet.frameWidth, this.#spriteSheet.frameHeight])
+            : new Vector2f([1, 1]);
     }
     setCurrentFrame(frame) {
         this.#currentFrame = frame;

@@ -48,3 +48,18 @@ class CameraBluePrint extends CriterionBlueprint
         return CriterionBlueprint.createEntity(scene, CameraBluePrint).#initialize();
     }
 }
+
+class RenderableSpriteBlueprint extends CriterionBlueprint
+{
+    transform:TransformComponent;
+    mesh:MeshComponent;
+    sprite:SpriteComponent;
+
+    constructor(entity:CriterionEntity) {
+        super(entity);
+    }
+
+    requiredComponents(): (new (...args: any[]) => CriterionComponent)[] {
+        return [TransformComponent, MeshComponent, SpriteComponent];
+    }
+}
