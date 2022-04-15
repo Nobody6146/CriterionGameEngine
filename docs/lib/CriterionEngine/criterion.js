@@ -501,7 +501,7 @@ class CriterionSceneManager {
             this.#loadQueue = null;
         }
         for (let scene of this.#unloadQueue) {
-            scene.release();
+            scene.cleanup();
             if (this.#currentScene === scene)
                 this.#currentScene = null;
         }
@@ -604,7 +604,7 @@ class CriterionScene {
     update(deltaTime) {
         //Init
         if (!this.isLoaded) {
-            this.init();
+            this.prepare();
             this.#loaded = true;
         }
         //Update systems
@@ -949,6 +949,9 @@ class CriterionMemmoryManager {
     bindTexture(texture) {
         this.#engine.gl.bindTexture(this.#engine.gl.TEXTURE_2D, texture);
     }
+    unbindTexture() {
+        this.bindTexture(null);
+    }
     useTexture(index) {
         this.#engine.gl.activeTexture(index);
     }
@@ -1099,12 +1102,8 @@ class CriterionShaderProgram {
         scene.engine.memoryManager.stopShaderProgram();
     }
     static indexToTextureId(engine, index) {
-        switch (index) {
-            case 0:
-                return engine.gl.TEXTURE0;
-            default:
-                return engine.gl.TEXTURE0;
-        }
+        return index === 0 || index > 32
+            ? engine.gl.TEXTURE0 + index : engine.gl.TEXTURE0;
     }
 }
 class CriterionKeyboardKeys {

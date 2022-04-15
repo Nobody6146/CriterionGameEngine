@@ -17,15 +17,11 @@ class TransformComponent extends CriterionComponent {
 
 class RendererComponent extends CriterionComponent
 {
-    color:Vector4f;
-    vao:WebGLVertexArrayObject;
-    verticesCount:number;
+    layer:number;
 
     constructor() {
         super();
-        this.color = new Vector4f([1,1,1,1]);
-        this.vao = null;
-        this.verticesCount = 0;
+        this.layer = 0;
     }
 }
 
@@ -52,6 +48,14 @@ class MeshComponent extends CriterionComponent
         this.vertices = [];
         this.textureCoordinates = [];
         this.normals = [];
+    }
+
+    set(mesh: Mesh | string) {
+        if(typeof mesh === "string")
+            mesh = CriterionEngine.instance.resourceManager.get(Mesh, mesh);
+        this.vertices = mesh.vertices;
+        this.textureCoordinates = mesh.uvs;
+        this.normals = mesh.normals
     }
 
     transformedVertices(transformation:Matrix4f):Vector3f[] {

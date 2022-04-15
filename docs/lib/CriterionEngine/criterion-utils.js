@@ -90,6 +90,36 @@ class CriterionShaderProgramUtils {
         return engine.memoryManager.createShaderProgram(vertexShaderSource, fragmentShaderSource, attributes, uniforms);
     }
 }
+class CriterionMeshUtils {
+    static squareMesh() {
+        return {
+            vertices: [
+                new Vector3f([-0.5, 0.5, 0]),
+                new Vector3f([-0.5, -0.5, 0]),
+                new Vector3f([0.5, -0.5, 0]),
+                new Vector3f([0.5, -0.5, 0]),
+                new Vector3f([0.5, 0.5, 0]),
+                new Vector3f([-0.5, 0.5, 0])
+            ],
+            uv: [
+                new Vector2f([0, 1,]),
+                new Vector2f([0, 0,]),
+                new Vector2f([1, 0,]),
+                new Vector2f([1, 0,]),
+                new Vector2f([1, 1,]),
+                new Vector2f([0, 1])
+            ],
+            normals: [
+                new Vector3f([0, 0, 1]),
+                new Vector3f([0, 0, 1]),
+                new Vector3f([0, 0, 1]),
+                new Vector3f([0, 0, 1]),
+                new Vector3f([0, 0, 1]),
+                new Vector3f([0, 0, 1]),
+            ],
+        };
+    }
+}
 class CriterionModelUtils {
     static buildModel(engine, attributes) {
         let memoryManager = engine.memoryManager;
@@ -120,5 +150,16 @@ class CriterionTextureUtils {
             };
             image.src = url;
         });
+    }
+    static async loadTexture(engine, url) {
+        let texture = engine.memoryManager.createTexture();
+        engine.memoryManager.bindTexture(texture);
+        let image = await CriterionTextureUtils.loadImage(url);
+        engine.memoryManager.bufferTexture(0, image.width, image.height, image);
+        engine.memoryManager.unbindTexture();
+        return {
+            image,
+            texture
+        };
     }
 }

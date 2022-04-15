@@ -13,14 +13,10 @@ class TransformComponent extends CriterionComponent {
     }
 }
 class RendererComponent extends CriterionComponent {
-    color;
-    vao;
-    verticesCount;
+    layer;
     constructor() {
         super();
-        this.color = new Vector4f([1, 1, 1, 1]);
-        this.vao = null;
-        this.verticesCount = 0;
+        this.layer = 0;
     }
 }
 class CameraComponent extends CriterionComponent {
@@ -41,6 +37,13 @@ class MeshComponent extends CriterionComponent {
         this.vertices = [];
         this.textureCoordinates = [];
         this.normals = [];
+    }
+    set(mesh) {
+        if (typeof mesh === "string")
+            mesh = CriterionEngine.instance.resourceManager.get(Mesh, mesh);
+        this.vertices = mesh.vertices;
+        this.textureCoordinates = mesh.uvs;
+        this.normals = mesh.normals;
     }
     transformedVertices(transformation) {
         let results = [];

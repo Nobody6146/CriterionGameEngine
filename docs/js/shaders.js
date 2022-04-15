@@ -7,7 +7,7 @@ class RenderableSpriteShader extends CriterionShaderProgram {
         this.#vbo = vbo;
     }
     static get maxTextures() {
-        return 16;
+        return 8;
     }
     static get positionAttribute() {
         return "position";
@@ -114,23 +114,35 @@ class RenderableSpriteShader extends CriterionShaderProgram {
                 colorIndex = colorId;
             }`;
         const fragmentShaderSource = `#version 300 es
-            #define numTextures 16
+            #define numTextures 8
             precision mediump float;
 
             in vec2 textureCoordinates;
             in float textureIndex;
             in float colorIndex;
 
-            uniform sampler2D textures[16];
+            uniform sampler2D textures[numTextures];
             uniform vec4 colors[numTextures];
 
             out vec4 outColor;
 
-            vec4 getSampleFromArray(sampler2D textures[16], int i, vec2 uv) {
+            vec4 getSampleFromArray(sampler2D textures[numTextures], int i, vec2 uv) {
                 switch(i) {
                     case 0:
                         return texture(textures[0], uv);
                     case 1:
+                        return texture(textures[0], uv);
+                    case 2:
+                        return texture(textures[0], uv);
+                    case 3:
+                        return texture(textures[0], uv);
+                    case 4:
+                        return texture(textures[0], uv);
+                    case 5:
+                        return texture(textures[0], uv);
+                    case 6:
+                        return texture(textures[0], uv);
+                    case 7:
                         return texture(textures[0], uv);
                 }
             }

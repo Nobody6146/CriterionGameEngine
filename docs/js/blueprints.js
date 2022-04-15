@@ -1,23 +1,28 @@
-class PlayerBlueprint extends CriterionBlueprint {
+class RenderableSpriteBlueprint extends CriterionBlueprint {
     transform;
+    mesh;
+    sprite;
     renderer;
     constructor(entity) {
         super(entity);
     }
-    #intialize(verticeCount) {
-        this.transform.position.x = .5;
-        this.transform.position.y = .5;
+    requiredComponents() {
+        return [TransformComponent, MeshComponent, SpriteComponent, RendererComponent];
+    }
+}
+class PlayerBlueprint extends RenderableSpriteBlueprint {
+    constructor(entity) {
+        super(entity);
+    }
+    #intialize() {
         this.transform.scale.array.set([.5, .5, .5]);
-        this.renderer.vao = this.entity.scene.engine.resourceManager.get(WebGLVertexArrayObject, "player");
-        this.renderer.verticesCount = verticeCount;
-        this.renderer.color.array.set([0, 1, 0, 1]);
+        this.mesh.set("player");
+        this.renderer.layer = 1;
+        this.sprite.setTexture("player");
         return this;
     }
-    requiredComponents() {
-        return [TransformComponent, RendererComponent];
-    }
-    static create(scene, verticeCount) {
-        return PlayerBlueprint.createEntity(scene, PlayerBlueprint).#intialize(verticeCount);
+    static create(scene) {
+        return PlayerBlueprint.createEntity(scene, PlayerBlueprint).#intialize();
     }
 }
 class CameraBluePrint extends CriterionBlueprint {
@@ -36,16 +41,5 @@ class CameraBluePrint extends CriterionBlueprint {
     }
     static create(scene) {
         return CriterionBlueprint.createEntity(scene, CameraBluePrint).#initialize();
-    }
-}
-class RenderableSpriteBlueprint extends CriterionBlueprint {
-    transform;
-    mesh;
-    sprite;
-    constructor(entity) {
-        super(entity);
-    }
-    requiredComponents() {
-        return [TransformComponent, MeshComponent, SpriteComponent];
     }
 }

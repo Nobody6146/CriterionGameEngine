@@ -601,7 +601,7 @@ class CriterionSceneManager {
         }
         for(let scene of this.#unloadQueue)
         {
-            scene.release();
+            scene.cleanup();
             if(this.#currentScene === scene)
                 this.#currentScene = null;
         }
@@ -722,14 +722,14 @@ abstract class CriterionScene {
     get isLoaded() {
         return this.#loaded;
     }
-    abstract init();
-    abstract release();
+    abstract prepare();
+    abstract cleanup();
 
     update(deltaTime:number) {
         //Init
         if(!this.isLoaded)
         {
-            this.init();
+            this.prepare();
             this.#loaded = true;
         }
         //Update systems
@@ -1130,6 +1130,9 @@ class CriterionMemmoryManager
     bindTexture(texture: WebGLTexture) {
         this.#engine.gl.bindTexture(this.#engine.gl.TEXTURE_2D, texture);
     }
+    unbindTexture() {
+        this.bindTexture(null);
+    }
     useTexture(index: number) {
         this.#engine.gl.activeTexture(index);
     }
@@ -1320,12 +1323,8 @@ abstract class CriterionShaderProgram<T> {
     }
 
     static indexToTextureId(engine:CriterionEngine, index:number):number {
-        switch(index) {
-            case 0:
-                return engine.gl.TEXTURE0;
-            default:
-                return engine.gl.TEXTURE0;
-        }
+        return index === 0 || index > 32
+            ? engine.gl.TEXTURE0 + index : engine.gl.TEXTURE0;
     }
 }
 

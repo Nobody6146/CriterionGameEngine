@@ -19,3 +19,15 @@ class SpriteSheet {
         return new Vector2f([(frame % this.framesPerRow) * offset.x, (frame / this.framesPerRow) * offset.y]);
     }
 }
+
+class Mesh {
+    vertices:Vector3f[];
+    uvs:Vector2f[];
+    normals:Vector3f[];
+
+    constructor(vertices:Vector3f[] = [], uvs:Vector2f[] = [], normals:Vector3f[] = []) {
+        this.vertices = vertices;
+        this.uvs = uvs;
+        this.normals = normals;
+    }
+}

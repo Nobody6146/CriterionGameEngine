@@ -100,6 +100,37 @@ class CriterionShaderProgramUtils
     }
 }
 
+class CriterionMeshUtils {
+    static squareMesh(): {vertices:Vector3f[], uv:Vector2f[], normals:Vector3f[] } {
+        return {
+            vertices: [
+                new Vector3f([-0.5, 0.5, 0]),
+                new Vector3f([-0.5, -0.5, 0]),
+                new Vector3f([0.5, -0.5, 0]),
+                new Vector3f([0.5, -0.5, 0]),
+                new Vector3f([0.5, 0.5, 0]),
+                new Vector3f([-0.5, 0.5, 0])
+            ],
+            uv: [
+                new Vector2f([0,1,]),
+                new Vector2f([0,0,]),
+                new Vector2f([1,0,]),
+                new Vector2f([1,0,]),
+                new Vector2f([1,1,]),
+                new Vector2f([0,1])
+            ],
+            normals:[
+                new Vector3f([0, 0, 1]),
+                new Vector3f([0, 0, 1]),
+                new Vector3f([0, 0, 1]),
+                new Vector3f([0, 0, 1]),
+                new Vector3f([0, 0, 1]),
+                new Vector3f([0, 0, 1]),
+            ],
+        };
+    }
+}
+
 class CriterionModelUtils {
     static buildModel(engine:CriterionEngine, attributes: {data: number[], dimension: number}[]): WebGLVertexArrayObject {
         let memoryManager = engine.memoryManager;
@@ -133,5 +164,17 @@ class CriterionTextureUtils
             }
             image.src = url;
         })
+    }
+
+    static async loadTexture(engine:CriterionEngine, url:string): Promise<{image:HTMLImageElement, texture:WebGLTexture}> {
+        let texture = engine.memoryManager.createTexture();
+        engine.memoryManager.bindTexture(texture);
+        let image = await CriterionTextureUtils.loadImage(url);
+        engine.memoryManager.bufferTexture(0, image.width, image.height, image);
+        engine.memoryManager.unbindTexture();
+        return {
+            image,
+            texture
+        }
     }
 }

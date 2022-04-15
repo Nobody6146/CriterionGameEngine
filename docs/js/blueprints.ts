@@ -1,27 +1,35 @@
-class PlayerBlueprint extends CriterionBlueprint {
+class RenderableSpriteBlueprint extends CriterionBlueprint
+{
     transform:TransformComponent;
+    mesh:MeshComponent;
+    sprite:SpriteComponent;
     renderer:RendererComponent;
 
     constructor(entity:CriterionEntity) {
         super(entity);
     }
 
-    #intialize(verticeCount:number) {
-        this.transform.position.x = .5;
-        this.transform.position.y = .5;
+    requiredComponents(): (new (...args: any[]) => CriterionComponent)[] {
+        return [TransformComponent, MeshComponent, SpriteComponent, RendererComponent];
+    }
+}
+
+class PlayerBlueprint extends RenderableSpriteBlueprint {
+
+    constructor(entity:CriterionEntity) {
+        super(entity);
+    }
+
+    #intialize() {
         this.transform.scale.array.set([.5,.5,.5]);
-        this.renderer.vao = this.entity.scene.engine.resourceManager.get(WebGLVertexArrayObject, "player");
-        this.renderer.verticesCount = verticeCount;
-        this.renderer.color.array.set([0,1,0,1]);
+        this.mesh.set("player");
+        this.renderer.layer = 1;
+        this.sprite.setTexture("player");
         return this;
     }
 
-    requiredComponents(): (new (...args: any[]) => CriterionComponent)[] {
-        return [TransformComponent, RendererComponent];
-    }
-
-    static create(scene: CriterionScene, verticeCount:number): PlayerBlueprint {
-        return PlayerBlueprint.createEntity(scene, PlayerBlueprint).#intialize(verticeCount);
+    static create(scene: CriterionScene): PlayerBlueprint {
+        return PlayerBlueprint.createEntity(scene, PlayerBlueprint).#intialize();
     }
 }
 
@@ -46,20 +54,5 @@ class CameraBluePrint extends CriterionBlueprint
 
     static create(scene: CriterionScene): CameraBluePrint {
         return CriterionBlueprint.createEntity(scene, CameraBluePrint).#initialize();
-    }
-}
-
-class RenderableSpriteBlueprint extends CriterionBlueprint
-{
-    transform:TransformComponent;
-    mesh:MeshComponent;
-    sprite:SpriteComponent;
-
-    constructor(entity:CriterionEntity) {
-        super(entity);
-    }
-
-    requiredComponents(): (new (...args: any[]) => CriterionComponent)[] {
-        return [TransformComponent, MeshComponent, SpriteComponent];
     }
 }
