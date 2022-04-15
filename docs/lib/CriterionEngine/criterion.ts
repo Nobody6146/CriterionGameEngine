@@ -135,6 +135,10 @@ class CriterionWindow {
         else
             this.#engine.gl.disable(this.#engine.gl.CULL_FACE);
     }
+
+    renderTriangles(verticesCount:number) {
+        this.#engine.gl.drawArrays(this.#engine.gl.TRIANGLES, 0, verticesCount);
+    }
 }
 class CriterionKeyboardKey {
     #keyboard: CriterionKeyboard;
@@ -486,13 +490,13 @@ class CriterionResourceManager {
             resources.set(resourceType, this.#resources.get(resourceType) ?? new Map());
         return resources;
     }
-    get<Type>(name:string, resourceType: new (...args: any[]) => Type): Type {
+    get<Type>(resourceType: new (...args: any[]) => Type, name?:string): Type {
         let resources = this.#resources.get(resourceType);
         if(resources == null)
             return undefined;
-        return resources.get(name);
+        return !name ? [...resources.values()]?.[0] : resources.get(name);
     }
-    add<Type>(name:string, resource:Type): Type {
+    add<Type>(resource:Type, name:string = ""): Type {
         let resources = this.#resources.get(resource.constructor);
         if(resources == null)
         {
@@ -502,7 +506,7 @@ class CriterionResourceManager {
         resources.set(name, resource);
         return resource;
     }
-    remove<Type>(name:string, resourceType: new (...args: any[]) => Type): boolean {
+    remove<Type>(resourceType: new (...args: any[]) => Type, name:string, ): boolean {
         let resources = this.#resources.get(resourceType);
         if(resources == null)
             return false;
@@ -817,13 +821,6 @@ abstract class CriterionScene {
     }
 }
 
-abstract class CriterionBlueprintTemplate {
-    static requiredComponents(): (new (...args) => CriterionComponent)[]
-    {
-        return [];
-    }
-}
-
 abstract class CriterionBlueprint
 {
     #entity;
@@ -856,7 +853,7 @@ abstract class CriterionBlueprint
                     return this.#entity.get(componentType);
                 }
                 ,set (value) {
-                    this.#entity.set(value, componentType);
+                    this.#entity.set(componentType, value);
                 }
             });
         }
@@ -907,6 +904,14 @@ abstract class CriterionBlueprint
     }
 }
 
+type CriterionMemoryMode = "static" | "dynamic";
+type CriterionMemoryType = "integer" | "float";
+interface CriterionLoadedShaderProgramResult {
+    shaderProgram:WebGLProgram;
+    uniformLocations:Map<string,WebGLUniformLocation>;
+    attributes:Map<string, number>;
+}
+
 //======== Memory Manager =============//
 class CriterionMemmoryManager
 {
@@ -953,15 +958,21 @@ class CriterionMemmoryManager
     unbindBufferArray() {
         return this.bindBufferArray(null);
     }
-    bufferArray(data:Float32Array | Int32Array, dynamic:boolean = false) {
-        let drawMode = dynamic ? this.#engine.gl.STATIC_DRAW : this.#engine.gl.DYNAMIC_DRAW;
-        this.#engine.gl.bufferData(this.#engine.gl.ARRAY_BUFFER, data, drawMode);
+    bufferArray(data:Float32Array | Int32Array | number, mode:CriterionMemoryMode = "static", offset?:number) {
+        let drawMode = mode === "static" ? this.#engine.gl.STATIC_DRAW : this.#engine.gl.DYNAMIC_DRAW;
+        if(typeof data === "number")
+        {
+            this.#engine.gl.bufferData(this.#engine.gl.ARRAY_BUFFER, data, drawMode);    
+        } else{
+            if(offset == null)
+                this.#engine.gl.bufferData(this.#engine.gl.ARRAY_BUFFER, data, drawMode);
+            else
+                this.#engine.gl.bufferSubData(this.#engine.gl.ARRAY_BUFFER, offset, data);
+        }
     }
-    setFloatAttribute(index:number, dimension:number, normalize:boolean = false, stride:number = 0, offset:number = 0) {
-        this.#engine.gl.vertexAttribPointer(index, dimension, this.#engine.gl.FLOAT, normalize, stride, offset)
-    }
-    setIntAttribute(index:number, dimension:number, normalize:boolean = false, stride:number = 0, offset:number = 0) {
-        this.#engine.gl.vertexAttribPointer(index, dimension, this.#engine.gl.INT, normalize, stride, offset)
+    setAttribute(type:CriterionMemoryType, index:number, dimension:number, normalize:boolean = false, stride:number = 0, offset:number = 0) {
+        let dataType = type === "integer" ? this.#engine.gl.INT : this.#engine.gl.FLOAT;
+        this.#engine.gl.vertexAttribPointer(index, dimension, dataType, normalize, stride, offset)
     }
     /** Creates vao */
     createArray(): WebGLVertexArrayObject {
@@ -1029,7 +1040,7 @@ class CriterionMemmoryManager
             this.#engine.gl.uniformMatrix4fv(uniformLocation, false, data.array);
         }
     }
-    createShaderProgram(vertexShaderSource:string, fragmentShaderSource:string, attributeLocations:Map<string, number> = new Map(), uniformNames:string[] = []): {shaderProgram:WebGLProgram, uniformLocations:Map<string,WebGLUniformLocation>, attributes:Map<string, number>} {
+    createShaderProgram(vertexShaderSource:string, fragmentShaderSource:string, attributeLocations:Map<string, number> = new Map(), uniformNames:string[] = []):CriterionLoadedShaderProgramResult {
         let vertexShader = this.#createVertexShader(vertexShaderSource);
         let fragmentShader = this.#createFragmentShader(fragmentShaderSource);
         const program = this.#engine.gl.createProgram();
@@ -1142,6 +1153,178 @@ class CriterionMemmoryManager
             this.#engine.gl.texParameteri(this.#engine.gl.TEXTURE_2D, this.#engine.gl.TEXTURE_WRAP_S, this.#engine.gl.CLAMP_TO_EDGE);
             this.#engine.gl.texParameteri(this.#engine.gl.TEXTURE_2D, this.#engine.gl.TEXTURE_WRAP_T, this.#engine.gl.CLAMP_TO_EDGE);
             this.#engine.gl.texParameteri(this.#engine.gl.TEXTURE_2D, this.#engine.gl.TEXTURE_MIN_FILTER, this.#engine.gl.LINEAR);
+        }
+    }
+}
+
+interface CriterionRenderBatchEntity {
+    vertices:Vector3f[];
+    textureCoordinates:Vector2f[];
+    color:Vector4f;
+    texture:WebGLTexture;
+    layer:number;
+}
+
+class CriterionRenderBatch {
+    buffer:number[];
+    textures:WebGLTexture[];
+    colors:Vector4f[];
+
+    constructor() {
+        this.buffer = [];
+        this.textures = [];
+        this.colors = [];
+    }
+
+    get verticesCount() {
+        return this.buffer.length / CriterionRenderBatcher.totalBytesPerVertex * 4;
+    }
+}
+
+class CriterionRenderBatcher {
+    #layers:Map<number, CriterionRenderBatchEntity[]>;
+
+    constructor() {
+        this.#layers = new Map();
+    }
+
+    clear():void {
+        this.#layers.clear();
+    }
+
+    buffer(renderable:CriterionRenderBatchEntity):void {
+        let renderLayer = this.#layers.get(renderable.layer);
+        if(!renderLayer)
+        {
+            renderLayer = [];
+            this.#layers.set(renderable.layer, renderLayer);
+        }
+        renderLayer.push(renderable);
+    }
+
+    batch(maxBufferSize:number, maxTextures:number):CriterionRenderBatch[] {
+        let batches = [new CriterionRenderBatch()];
+        let batch = batches[0];
+
+        //Batch in order of layers/priority
+        let layerNumbers = [...this.#layers.keys()].sort((x, y) => x - y);
+        for(let layerNumber of layerNumbers)
+        {
+            let layer = this.#layers.get(layerNumber);
+            for(let renderable of layer)
+            {
+                let spaceNeeded = renderable.vertices.length * CriterionRenderBatcher.totalBytesPerVertex / 4;
+                if(batch.buffer.length + spaceNeeded > maxBufferSize)
+                {
+                    batch = new CriterionRenderBatch();
+                    batches.push(batch);
+                }
+
+                //Determine texture and color ids (also move batches if needed)
+                let textureId = renderable.texture == null ? null : batch.textures.indexOf(renderable.texture);
+                if(textureId < 0)
+                {
+                    if(batch.textures.length === maxTextures)
+                    {
+                        batch = new CriterionRenderBatch();
+                        batches.push(batch);
+                    }
+                    textureId = batch.textures.length;
+                    batch.textures.push(renderable.texture);
+                } else if(textureId === null) {
+                    textureId = -1;
+                }
+                let colorId = renderable.color == null ? null : batch.colors.findIndex(x => x.equals(renderable.color));
+                if(colorId < 0)
+                {
+                    if(batch.colors.length === maxTextures)
+                    {
+                        batch = new CriterionRenderBatch();
+                        batches.push(batch);
+                    }
+                    colorId = batch.colors.length;
+                    batch.colors.push(renderable.color);
+                } else if(colorId === null) {
+                    colorId = -1;
+                }
+
+                //Batch the model's data
+                for(let i = 0; i < renderable.vertices.length; i++)
+                {
+                    let vertice = renderable.vertices[i];
+                    let textureCoords = renderable.textureCoordinates[i] ?? new Vector2f([0, 0]);
+                    batch.buffer.push(...vertice.array);
+                    batch.buffer.push(...textureCoords.array);
+                    batch.buffer.push(textureId);
+                    batch.buffer.push(colorId);
+                }
+            }
+        }
+        return batches;
+    }
+
+    static get totalBytesPerVertex() {
+        return this.numberOfVertexBytes + this.numberOfTextureCoordinateBytes + this.numberOfTextureIdBytes + this.numberOfColorIdBytes;
+    }
+
+    static get numberOfVertexBytes() {
+        return 12;
+    }
+
+    static get numberOfTextureCoordinateBytes() {
+        return 8;
+    }
+
+    static get numberOfTextureIdBytes() {
+        return 4;
+    }
+
+    static get numberOfColorIdBytes() {
+        return 4;
+    }
+}
+
+abstract class CriterionShaderProgram<T> {
+    #program:WebGLProgram;
+    #uniforms:Map<string,WebGLUniformLocation>;
+    #attributes:Map<string, number>;
+
+    constructor(program:WebGLProgram, uniforms:Map<string,WebGLUniformLocation>, attributes:Map<string, number>) {
+        this.#program = program;
+        this.#uniforms = uniforms;
+        this.#attributes = attributes;
+    }
+
+    get program() {
+        return this.#program;
+    }
+    get uniforms() {
+        return this.#uniforms;
+    }
+    get attributes() {
+        return this.#attributes;
+    }
+
+    abstract prepare(scene:CriterionScene):T[];
+    abstract render(scene:CriterionScene, entity:T);
+    abstract cleanup(scene:CriterionScene):void;
+
+    run(scene:CriterionScene) {
+        scene.engine.memoryManager.startShaderProgram(this.#program);
+        let entities = this.prepare(scene);
+        for(let entity of entities) {
+            this.render(scene, entity);
+        }
+        this.cleanup(scene);
+        scene.engine.memoryManager.stopShaderProgram();
+    }
+
+    static indexToTextureId(engine:CriterionEngine, index:number):number {
+        switch(index) {
+            case 0:
+                return engine.gl.TEXTURE0;
+            default:
+                return engine.gl.TEXTURE0;
         }
     }
 }

@@ -97,7 +97,7 @@ class SpriteComponent extends CriterionComponent {
     }
     setTexture(texture) {
         if (typeof texture === "string")
-            texture = CriterionEngine.instance.resourceManager.get(texture, WebGLTexture);
+            texture = CriterionEngine.instance.resourceManager.get(WebGLTexture, texture);
         this.#texture = texture;
         this.#color = null;
         this.#spriteSheet = null;
@@ -106,7 +106,7 @@ class SpriteComponent extends CriterionComponent {
     }
     setSpriteSheet(spriteSheet) {
         if (typeof spriteSheet === "string")
-            spriteSheet = CriterionEngine.instance.resourceManager.get(spriteSheet, SpriteSheet);
+            spriteSheet = CriterionEngine.instance.resourceManager.get(SpriteSheet, spriteSheet);
         this.#spriteSheet = spriteSheet;
         this.#texture = null;
         this.#color = null;

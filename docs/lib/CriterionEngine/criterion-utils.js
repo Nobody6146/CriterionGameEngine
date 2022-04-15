@@ -101,7 +101,7 @@ class CriterionModelUtils {
             let vbo = memoryManager.createBuffer();
             memoryManager.bindBufferArray(vbo);
             memoryManager.bufferArray(new Float32Array(attribute.data));
-            memoryManager.setFloatAttribute(i, attribute.dimension);
+            memoryManager.setAttribute("float", i, attribute.dimension);
         }
         memoryManager.unbindBufferArray();
         memoryManager.unbindArray();
@@ -120,90 +120,5 @@ class CriterionTextureUtils {
             };
             image.src = url;
         });
-    }
-}
-class RenderBatch {
-    buffer;
-    textures;
-    colors;
-    constructor() {
-        this.buffer = [];
-        this.textures = [];
-        this.colors = [];
-    }
-}
-class RenderBatcher {
-    #layers;
-    constructor() {
-        this.#layers = new Map();
-    }
-    clear() {
-        this.#layers.clear();
-    }
-    buffer(renderable) {
-        let renderLayer = this.#layers.get(renderable.layer);
-        if (!renderLayer) {
-            renderLayer = [];
-            this.#layers.set(renderable.layer, renderLayer);
-        }
-        renderLayer.push(renderable);
-    }
-    batch(maxBufferSize, maxTextures) {
-        let batches = [new RenderBatch()];
-        let batch = batches[0];
-        //Batch in order of layers/priority
-        let layerNumbers = [...this.#layers.keys()].sort((x, y) => x - y);
-        for (let layerNumber of layerNumbers) {
-            let layer = this.#layers.get(layerNumber);
-            for (let renderable of layer) {
-                let spaceNeeded = renderable.vertices.length * RenderBatcher.bytesPerVertex;
-                if (batch.buffer.length + spaceNeeded > maxBufferSize) {
-                    batch = new RenderBatch();
-                    batches.push(batch);
-                }
-                //Determine texture and color ids (also move batches if needed)
-                let textureId = renderable.texture == null ? null : batch.textures.indexOf(renderable.texture);
-                if (textureId < 0) {
-                    if (batch.textures.length === maxTextures) {
-                        batch = new RenderBatch();
-                        batches.push(batch);
-                    }
-                    textureId = batch.textures.length;
-                    batch.textures.push(renderable.texture);
-                }
-                else if (textureId === null) {
-                    textureId = -1;
-                }
-                let colorId = renderable.color == null ? null : batch.colors.findIndex(x => x.equals(renderable.color));
-                if (colorId < 0) {
-                    if (batch.colors.length === maxTextures) {
-                        batch = new RenderBatch();
-                        batches.push(batch);
-                    }
-                    colorId = batch.colors.length;
-                    batch.colors.push(renderable.color);
-                }
-                else if (textureId === null) {
-                    textureId = -1;
-                }
-                //Batch the model's data
-                for (let i = 0; i < renderable.vertices.length; i++) {
-                    let vertice = renderable.vertices[i];
-                    let textureCoords = renderable.textureCoordinates[i] ?? new Vector2f([0, 0]);
-                    batch.buffer.push(...vertice.array);
-                    batch.buffer.push(...textureCoords.array);
-                    batch.buffer.push(textureId);
-                    batch.buffer.push(colorId);
-                }
-            }
-        }
-        return batches;
-    }
-    static get bytesPerVertex() {
-        return 3 //vertices values count
-            + 2 //plus texture coordinate values count
-            + 1 //plus texture number
-            + 1; //plus color number
-        //If we don't have enough space left in the batch, start a new one
     }
 }

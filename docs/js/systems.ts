@@ -107,36 +107,14 @@ class TextureRendererSystem extends CriterionSystem
     }
 }
 
-class SpriteRenderer extends CriterionSystem {
-
-    #maxTextures:number;
-    #maxBufferSize:number;
+class SpriteRendererSystem extends CriterionSystem {
 
     constructor(scene:CriterionScene) {
         super(scene);
-        this.#maxBufferSize = scene.engine.memoryManager.maxTextures;
-        this.#maxBufferSize = RenderBatcher.bytesPerVertex * 3 * 10000; //Lets default to buffering up to 10000 triangles worth of data
     }
 
     update(deltaTime: number): void {
-        var renderBatcher = new RenderBatcher();
-        var blueprints = this.getRenderables();
-        for(let blueprint of blueprints) {
-            let renderable:RenderBatchEntity = {
-                vertices: blueprint.mesh.transformedVertices(blueprint.transform.transformation),
-                textureCoordinates: blueprint.mesh.transformedTextureCoordinates(blueprint.sprite.frameOffset, blueprint.sprite.frameSize),
-                color: blueprint.sprite.color,
-                texture: blueprint.sprite.texture,
-                layer: blueprint.transform.position.z,
-            }
-            renderBatcher.buffer(renderable);
-        }
-        let batches = renderBatcher.batch(this.#maxBufferSize, this.#maxTextures);
-
-        //Now we must figure out how to create vertex pointer, load the data, buffer, and render
-    }
-
-    getRenderables():RenderableSpriteBlueprint[] {
-        return CriterionBlueprint.blueprints(this.scene, RenderableSpriteBlueprint);
+        let shader = this.scene.engine.resourceManager.get(RenderableSpriteShader);
+        shader.run(this.scene);
     }
 }

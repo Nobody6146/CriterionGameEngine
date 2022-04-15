@@ -112,6 +112,9 @@ class CriterionWindow {
         else
             this.#engine.gl.disable(this.#engine.gl.CULL_FACE);
     }
+    renderTriangles(verticesCount) {
+        this.#engine.gl.drawArrays(this.#engine.gl.TRIANGLES, 0, verticesCount);
+    }
 }
 class CriterionKeyboardKey {
     #keyboard;
@@ -403,13 +406,13 @@ class CriterionResourceManager {
             resources.set(resourceType, this.#resources.get(resourceType) ?? new Map());
         return resources;
     }
-    get(name, resourceType) {
+    get(resourceType, name) {
         let resources = this.#resources.get(resourceType);
         if (resources == null)
             return undefined;
-        return resources.get(name);
+        return !name ? [...resources.values()]?.[0] : resources.get(name);
     }
-    add(name, resource) {
+    add(resource, name = "") {
         let resources = this.#resources.get(resource.constructor);
         if (resources == null) {
             resources = new Map();
@@ -418,7 +421,7 @@ class CriterionResourceManager {
         resources.set(name, resource);
         return resource;
     }
-    remove(name, resourceType) {
+    remove(resourceType, name) {
         let resources = this.#resources.get(resourceType);
         if (resources == null)
             return false;
@@ -681,11 +684,6 @@ class CriterionScene {
         this.#destroyedEntities.add(entityId);
     }
 }
-class CriterionBlueprintTemplate {
-    static requiredComponents() {
-        return [];
-    }
-}
 class CriterionBlueprint {
     #entity;
     constructor(entity) {
@@ -712,7 +710,7 @@ class CriterionBlueprint {
                     return this.#entity.get(componentType);
                 },
                 set(value) {
-                    this.#entity.set(value, componentType);
+                    this.#entity.set(componentType, value);
                 }
             });
         }
@@ -792,15 +790,21 @@ class CriterionMemmoryManager {
     unbindBufferArray() {
         return this.bindBufferArray(null);
     }
-    bufferArray(data, dynamic = false) {
-        let drawMode = dynamic ? this.#engine.gl.STATIC_DRAW : this.#engine.gl.DYNAMIC_DRAW;
-        this.#engine.gl.bufferData(this.#engine.gl.ARRAY_BUFFER, data, drawMode);
+    bufferArray(data, mode = "static", offset) {
+        let drawMode = mode === "static" ? this.#engine.gl.STATIC_DRAW : this.#engine.gl.DYNAMIC_DRAW;
+        if (typeof data === "number") {
+            this.#engine.gl.bufferData(this.#engine.gl.ARRAY_BUFFER, data, drawMode);
+        }
+        else {
+            if (offset == null)
+                this.#engine.gl.bufferData(this.#engine.gl.ARRAY_BUFFER, data, drawMode);
+            else
+                this.#engine.gl.bufferSubData(this.#engine.gl.ARRAY_BUFFER, offset, data);
+        }
     }
-    setFloatAttribute(index, dimension, normalize = false, stride = 0, offset = 0) {
-        this.#engine.gl.vertexAttribPointer(index, dimension, this.#engine.gl.FLOAT, normalize, stride, offset);
-    }
-    setIntAttribute(index, dimension, normalize = false, stride = 0, offset = 0) {
-        this.#engine.gl.vertexAttribPointer(index, dimension, this.#engine.gl.INT, normalize, stride, offset);
+    setAttribute(type, index, dimension, normalize = false, stride = 0, offset = 0) {
+        let dataType = type === "integer" ? this.#engine.gl.INT : this.#engine.gl.FLOAT;
+        this.#engine.gl.vertexAttribPointer(index, dimension, dataType, normalize, stride, offset);
     }
     /** Creates vao */
     createArray() {
@@ -968,6 +972,138 @@ class CriterionMemmoryManager {
             this.#engine.gl.texParameteri(this.#engine.gl.TEXTURE_2D, this.#engine.gl.TEXTURE_WRAP_S, this.#engine.gl.CLAMP_TO_EDGE);
             this.#engine.gl.texParameteri(this.#engine.gl.TEXTURE_2D, this.#engine.gl.TEXTURE_WRAP_T, this.#engine.gl.CLAMP_TO_EDGE);
             this.#engine.gl.texParameteri(this.#engine.gl.TEXTURE_2D, this.#engine.gl.TEXTURE_MIN_FILTER, this.#engine.gl.LINEAR);
+        }
+    }
+}
+class CriterionRenderBatch {
+    buffer;
+    textures;
+    colors;
+    constructor() {
+        this.buffer = [];
+        this.textures = [];
+        this.colors = [];
+    }
+    get verticesCount() {
+        return this.buffer.length / CriterionRenderBatcher.totalBytesPerVertex * 4;
+    }
+}
+class CriterionRenderBatcher {
+    #layers;
+    constructor() {
+        this.#layers = new Map();
+    }
+    clear() {
+        this.#layers.clear();
+    }
+    buffer(renderable) {
+        let renderLayer = this.#layers.get(renderable.layer);
+        if (!renderLayer) {
+            renderLayer = [];
+            this.#layers.set(renderable.layer, renderLayer);
+        }
+        renderLayer.push(renderable);
+    }
+    batch(maxBufferSize, maxTextures) {
+        let batches = [new CriterionRenderBatch()];
+        let batch = batches[0];
+        //Batch in order of layers/priority
+        let layerNumbers = [...this.#layers.keys()].sort((x, y) => x - y);
+        for (let layerNumber of layerNumbers) {
+            let layer = this.#layers.get(layerNumber);
+            for (let renderable of layer) {
+                let spaceNeeded = renderable.vertices.length * CriterionRenderBatcher.totalBytesPerVertex / 4;
+                if (batch.buffer.length + spaceNeeded > maxBufferSize) {
+                    batch = new CriterionRenderBatch();
+                    batches.push(batch);
+                }
+                //Determine texture and color ids (also move batches if needed)
+                let textureId = renderable.texture == null ? null : batch.textures.indexOf(renderable.texture);
+                if (textureId < 0) {
+                    if (batch.textures.length === maxTextures) {
+                        batch = new CriterionRenderBatch();
+                        batches.push(batch);
+                    }
+                    textureId = batch.textures.length;
+                    batch.textures.push(renderable.texture);
+                }
+                else if (textureId === null) {
+                    textureId = -1;
+                }
+                let colorId = renderable.color == null ? null : batch.colors.findIndex(x => x.equals(renderable.color));
+                if (colorId < 0) {
+                    if (batch.colors.length === maxTextures) {
+                        batch = new CriterionRenderBatch();
+                        batches.push(batch);
+                    }
+                    colorId = batch.colors.length;
+                    batch.colors.push(renderable.color);
+                }
+                else if (colorId === null) {
+                    colorId = -1;
+                }
+                //Batch the model's data
+                for (let i = 0; i < renderable.vertices.length; i++) {
+                    let vertice = renderable.vertices[i];
+                    let textureCoords = renderable.textureCoordinates[i] ?? new Vector2f([0, 0]);
+                    batch.buffer.push(...vertice.array);
+                    batch.buffer.push(...textureCoords.array);
+                    batch.buffer.push(textureId);
+                    batch.buffer.push(colorId);
+                }
+            }
+        }
+        return batches;
+    }
+    static get totalBytesPerVertex() {
+        return this.numberOfVertexBytes + this.numberOfTextureCoordinateBytes + this.numberOfTextureIdBytes + this.numberOfColorIdBytes;
+    }
+    static get numberOfVertexBytes() {
+        return 12;
+    }
+    static get numberOfTextureCoordinateBytes() {
+        return 8;
+    }
+    static get numberOfTextureIdBytes() {
+        return 4;
+    }
+    static get numberOfColorIdBytes() {
+        return 4;
+    }
+}
+class CriterionShaderProgram {
+    #program;
+    #uniforms;
+    #attributes;
+    constructor(program, uniforms, attributes) {
+        this.#program = program;
+        this.#uniforms = uniforms;
+        this.#attributes = attributes;
+    }
+    get program() {
+        return this.#program;
+    }
+    get uniforms() {
+        return this.#uniforms;
+    }
+    get attributes() {
+        return this.#attributes;
+    }
+    run(scene) {
+        scene.engine.memoryManager.startShaderProgram(this.#program);
+        let entities = this.prepare(scene);
+        for (let entity of entities) {
+            this.render(scene, entity);
+        }
+        this.cleanup(scene);
+        scene.engine.memoryManager.stopShaderProgram();
+    }
+    static indexToTextureId(engine, index) {
+        switch (index) {
+            case 0:
+                return engine.gl.TEXTURE0;
+            default:
+                return engine.gl.TEXTURE0;
         }
     }
 }

@@ -8,7 +8,7 @@ class PlayerBlueprint extends CriterionBlueprint {
         this.transform.position.x = .5;
         this.transform.position.y = .5;
         this.transform.scale.array.set([.5, .5, .5]);
-        this.renderer.vao = this.entity.scene.engine.resourceManager.get("player", WebGLVertexArrayObject);
+        this.renderer.vao = this.entity.scene.engine.resourceManager.get(WebGLVertexArrayObject, "player");
         this.renderer.verticesCount = verticeCount;
         this.renderer.color.array.set([0, 1, 0, 1]);
         return this;
