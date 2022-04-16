@@ -65,12 +65,14 @@ class CriterionEngineOptions
     canvasSelector: string;
     debugMode: boolean;
     logLevel: CriterionEngineLogLevel;
+    renderResolution:Vector2f;
 
     constructor()
     {
         this.canvasSelector = "canvas";
         this.debugMode = false;
         this.logLevel = 'info';
+        this.renderResolution = new Vector2f([window.screen.width, window.screen.height]);
     }
 }
 
@@ -88,14 +90,8 @@ class CriterionWindow {
         //this.cullFace();
         this.#engine.logger.engine("window initialized");
     }
-    get width(): number {
-        return this.#engine.canvas.width;
-    }
-    get height(): number {
-        return this.#engine.canvas.height;
-    }
-    get size(): Vector2f {
-        return new Vector2f([this.width, this.height]);
+    get resolution() {
+        return new Vector2f([this.#engine.canvas.width, this.#engine.canvas.height]);
     }
     clear() {
         this.#engine.gl.viewport(0, 0, this.#engine.canvas.width, this.#engine.canvas.height);
@@ -329,10 +325,6 @@ class CriterionMouse {
 
 abstract class CriterionEngine
 {
-    // this.memmoryManager = new TMemmoryManager(this);
-    // this.windowManager = new TWindowManager(this);
-    // this.resourceManager = new TResourceManager(this);
-    // this.sceneManager = new TSceneMananger(this);
     // this.controllerManager = new TGameControllerManager(this);
 
     #logger: CriterionEngineLogger;

@@ -57,7 +57,7 @@ class RenderableSpriteShader extends CriterionShaderProgram {
         for (let attribute of this.attributes.values())
             mm.enableAttribute(attribute);
         mm.setUniform(this.uniforms.get(RenderableSpriteShader.viewUniform), camera.camera.view);
-        mm.setUniform(this.uniforms.get(RenderableSpriteShader.projectionUniform), camera.camera.view);
+        mm.setUniform(this.uniforms.get(RenderableSpriteShader.projectionUniform), camera.camera.projection);
         return renderBatcher.batch(this.#maxBufferSize, RenderableSpriteShader.maxTextures);
     }
     render(scene, entity) {
