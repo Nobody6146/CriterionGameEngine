@@ -42,6 +42,10 @@ class PlayerBlueprint extends RenderableSpriteBlueprint {
         super(entity);
     }
 
+    requiredComponents(): (new (...args: any[]) => CriterionComponent)[] {
+        return super.requiredComponents().concat([AnimatorComponent]);
+    }
+
     #intialize(engine:CriterionEngine) {
         this.transform.scale.array.set([.5,.5,.5]);
         let mesh = engine.resourceManager.get(Mesh, "player");
@@ -67,7 +71,7 @@ class CameraBluePrint extends CriterionBlueprint
 
     #initialize() {
         this.transform.scale.y = -1;
-        this.camera.projection = Matrix4f.orthographic(0, 1, 1, 0, -1, 1);
+        this.camera.projection = Matrix4f.orthographic(-1, 1, 1, -1, -1, 1);
         return this;
     }
 
@@ -77,5 +81,29 @@ class CameraBluePrint extends CriterionBlueprint
 
     static create(scene: CriterionScene): CameraBluePrint {
         return CriterionBlueprint.createEntity(scene, CameraBluePrint).#initialize();
+    }
+}
+
+class PatrolLocationBlueprint extends CriterionBlueprint {
+
+    navigator:NavigatorComponent;
+    transform:TransformComponent;
+    patroller:PatrollerComponent;
+
+    constructor(entity:CriterionEntity) {
+        super(entity);
+    }
+
+    requiredComponents(): (new (...args: any[]) => CriterionComponent)[] {
+        return [TransformComponent, NavigatorComponent, PatrollerComponent];
+    }
+
+    patrol(speed:number, destinations:Vector3f[], tolerance:number = .001):void {
+        this.patroller.patrol(speed, destinations, tolerance);
+        this.navigate();
+    }
+
+    navigate() {
+        this.navigator.navigate(this.transform.position, this.patroller.destination);
     }
 }

@@ -37,21 +37,21 @@ class Mesh {
 class AnimationSequence {
     startFrame;
     endFrame;
-    frameLength;
-    keyframes;
-    //The frame to go to when animation stops
-    stoppedFrame;
+    frameDuration;
+    animatableComponents;
+    //The frame to go to when animation stops/finishes
+    finishedFrame;
     //How many times to repeat
-    repetitions;
+    iterations;
     //Whether or not the animation can be interupted
-    canInterupt;
-    constructor(startFrame, endFrame, frameLength, keyframes, repetitions = -1) {
+    interruptible;
+    constructor(startFrame, endFrame, frameDuration, animatableComponents = [], iterations = -1, interruptible = true, finishedFrame = null) {
         this.startFrame = startFrame;
         this.endFrame = endFrame;
-        this.frameLength = frameLength;
-        this.keyframes = keyframes ?? new Map();
-        this.repetitions = repetitions;
-        this.stoppedFrame = null;
-        this.canInterupt = true;
+        this.frameDuration = frameDuration;
+        this.animatableComponents = animatableComponents;
+        this.iterations = iterations;
+        this.interruptible = interruptible;
+        this.finishedFrame = finishedFrame;
     }
 }

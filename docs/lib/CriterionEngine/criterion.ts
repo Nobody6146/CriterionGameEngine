@@ -437,6 +437,10 @@ abstract class CriterionEngine
         return true;
     }
 
+    terminate() {
+        this.#running = false;
+    }
+
     abstract init(): Promise<boolean>;
 
     #update(timestamp) {
@@ -457,7 +461,10 @@ abstract class CriterionEngine
         }
     }
 
-    getFrameRate = function() {
+    get deltaTime() {
+        return this.#deltaTime;
+    }
+    frameRate = function() {
         return 1 / this.#deltaTime;
     }
 }
@@ -667,7 +674,7 @@ class CriterionEntity {
     }
 }
 
-abstract class CriterionComponent {
+interface CriterionComponent {
 }
 
 abstract class CriterionSystem {
@@ -694,7 +701,6 @@ abstract class CriterionScene {
     #nextEntityId: number;
     #entities: Map<number, CriterionEntity>;
     #componentTypes: Set<new (...args) => CriterionComponent>;
-    #destroyedEntities: Set<number>;
     #systems:Map<new (scene:CriterionScene) => CriterionSystem, CriterionSystem>;
 
     constructor(engine:CriterionEngine) {
@@ -704,7 +710,6 @@ abstract class CriterionScene {
         this.#nextEntityId = 0;
         this.#entities = new Map();
         this.#componentTypes = new Set();
-        this.#destroyedEntities = new Set();
         this.#systems = new Map();
     }
 
@@ -727,16 +732,6 @@ abstract class CriterionScene {
         //Update systems
         for(let system of this.#systems.values())
             system.update(deltaTime);
-        //Cleanup any removed entities
-        this.#cleanupEntities();
-    }
-    #cleanupEntities() {
-        for(let entityId of this.#destroyedEntities)
-        {
-            if(!this.#entities.has(entityId))
-                return;
-            this.#entities.delete(entityId);
-        }
     }
 
     system<Type extends CriterionSystem>(systemType: new(scene:CriterionScene) => Type) : Type {
@@ -793,7 +788,7 @@ abstract class CriterionScene {
         return this.#entities.get(entityId);
     }
     /** Returns a map of entities that matches the set of components */
-    entities(...componentTypes: (new (...args) => CriterionComponent)[]): CriterionEntity[]
+    entities(componentTypes: (new (...args) => CriterionComponent)[]): CriterionEntity[]
     {
         let entities:CriterionEntity[] = [];
 
@@ -819,7 +814,9 @@ abstract class CriterionScene {
         return entity;
     }
     destroyEntity(entityId:number): void {
-        this.#destroyedEntities.add(entityId);
+        if(!this.#entities.has(entityId))
+            return;
+        this.#entities.delete(entityId);
     }
 }
 
@@ -880,12 +877,12 @@ abstract class CriterionBlueprint
     static entities<Type extends CriterionBlueprint>(scene:CriterionScene, blueprintType:new (...args) => Type): CriterionEntity[]
     {
         let dummyBlueprint = CriterionBlueprint.createDummy(scene, blueprintType);
-        return scene.entities(...dummyBlueprint.requiredComponents());
+        return scene.entities(dummyBlueprint.requiredComponents());
     }
 
     static blueprints<Type extends CriterionBlueprint>(scene:CriterionScene, blueprintType:new (...args) => Type): Type[] {
         let dummyBlueprint = CriterionBlueprint.createDummy(scene, blueprintType);
-        let entities = scene.entities(...dummyBlueprint.requiredComponents());
+        let entities = scene.entities(dummyBlueprint.requiredComponents());
         let blueprints:Type[] = [];
         for(let entity of entities) {
             let blueprint = new blueprintType(entity).load();

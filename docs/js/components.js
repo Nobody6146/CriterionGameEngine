@@ -1,9 +1,19 @@
-class TransformComponent extends CriterionComponent {
+class CleanupComponent {
+    destroy;
+    constructor() {
+        this.destroy = false;
+    }
+    animate(entity) {
+        let animator = entity.get(AnimatorComponent);
+        if (animator?.finished === true)
+            this.destroy = true;
+    }
+}
+class TransformComponent {
     position;
     rotation;
     scale;
     constructor() {
-        super();
         this.position = new Vector3f([0, 0, 0]);
         this.rotation = new Vector3f();
         this.scale = new Vector3f([1, 1, 1]);
@@ -12,28 +22,25 @@ class TransformComponent extends CriterionComponent {
         return Matrix4f.transformation(this.position, this.rotation, this.scale);
     }
 }
-class RendererComponent extends CriterionComponent {
+class RendererComponent {
     layer;
     constructor() {
-        super();
         this.layer = 0;
     }
 }
-class CameraComponent extends CriterionComponent {
+class CameraComponent {
     projection;
     view;
     constructor() {
-        super();
         this.projection = Matrix4f.identity();
         this.view = Matrix4f.identity();
     }
 }
-class MeshComponent extends CriterionComponent {
+class MeshComponent {
     vertices;
     textureCoordinates;
     normals;
     constructor() {
-        super();
         this.vertices = [];
         this.textureCoordinates = [];
         this.normals = [];
@@ -45,35 +52,34 @@ class MeshComponent extends CriterionComponent {
         return this;
     }
 }
-class SpriteComponent extends CriterionComponent {
+class SpriteComponent {
     spriteSheet;
     texture;
     color;
-    currentFrame;
+    frame;
     constructor() {
-        super();
         this.spriteSheet = null;
         this.texture = null;
         this.color = new Vector4f([1, 1, 1, 1]);
-        this.currentFrame = 0;
+        this.frame = 0;
     }
     get frameCoordinates() {
         return this.spriteSheet != null
-            ? this.spriteSheet.getFrameCoordinates(this.currentFrame)
+            ? this.spriteSheet.getFrameCoordinates(this.frame)
             : {
                 start: new Vector2f([0, 0]),
                 end: new Vector2f([1, 1])
             };
     }
     setCurrentFrame(frame) {
-        this.currentFrame = frame;
+        this.frame = frame;
         return frame;
     }
     setTexture(texture) {
         this.texture = texture;
         this.color = null;
         this.spriteSheet = null;
-        this.currentFrame = 0;
+        this.frame = 0;
         return texture;
     }
     setSpriteSheet(spriteSheet) {
@@ -86,74 +92,103 @@ class SpriteComponent extends CriterionComponent {
         this.color = color;
         this.texture = null;
         this.spriteSheet = null;
-        this.currentFrame = 0;
+        this.frame = 0;
         return color;
     }
+    animate(entity) {
+        let animator = entity.get(AnimatorComponent);
+        if (animator == null)
+            return;
+        this.frame = animator.frame;
+    }
 }
-class AnimatorComponent extends CriterionComponent {
-    currentFrame;
+class AnimatorComponent {
+    frame;
+    iteration;
     deltaTime;
     animation;
     paused;
+    playing;
     constructor() {
-        super();
         this.animation = null;
-        this.currentFrame = 0;
+        this.frame = 0;
+        this.iteration = 0;
         this.deltaTime = 0;
         this.paused = false;
+        this.playing = false;
     }
-    get playing() {
-        return this.animation != null;
+    get finished() {
+        return this.animation != null && !this.playing;
     }
     animate(animation) {
+        if (this.animation?.interruptible === false)
+            return;
         this.animation = animation;
         this.deltaTime = -1;
+        this.iteration = 1;
         this.paused = false;
-        this.currentFrame = animation.startFrame;
+        this.playing = true;
+        this.frame = animation.startFrame;
     }
     pause(toggle) {
         this.paused = toggle;
     }
     stop() {
         this.paused = false;
+        this.playing = false;
         this.animation = null;
     }
     setFrame(frame) {
         if (!this.animation)
             return;
         if (frame < this.animation.startFrame)
-            this.currentFrame = this.animation.startFrame;
+            this.frame = this.animation.startFrame;
         else if (frame > this.animation.endFrame)
-            this.currentFrame = this.animation.endFrame;
+            this.frame = this.animation.endFrame;
         else
-            this.currentFrame = frame;
+            this.frame = frame;
         this.deltaTime = 0;
     }
     clearTime() {
         this.deltaTime = 0;
     }
-    update(deltaTime, entity) {
-        if (!this.animation)
-            return;
-        //If the animation just started, trigger any key frames for start frame
-        if (this.deltaTime < 0) {
-            this.deltaTime = 0;
-            this.#executeKeyFrames(0, entity);
-            return;
-        }
-        this.deltaTime += deltaTime;
-        while (this.deltaTime > this.animation.frameLength) {
-            this.currentFrame = this.currentFrame < this.animation.endFrame
-                ? this.currentFrame + 1
-                : this.animation.startFrame;
-            this.deltaTime -= this.animation.frameLength;
-            this.#executeKeyFrames(deltaTime, entity);
-        }
+}
+class NavigatorComponent {
+    start;
+    destination;
+    navigating;
+    constructor() {
+        this.destination = null;
+        this.navigating = false;
+        this.start = null;
     }
-    #executeKeyFrames(deltaTime, entity) {
-        let keyframe = this.animation.keyframes.get(this.currentFrame);
-        if (!keyframe)
-            return;
-        keyframe.update(deltaTime, entity);
+    navigate(start, destination) {
+        this.destination = destination;
+        this.start = start;
+        this.navigating = true;
+    }
+    stop() {
+        this.navigating = false;
+    }
+}
+class PatrollerComponent {
+    destinations;
+    index;
+    speed;
+    tolerance;
+    constructor() {
+        this.destinations = [];
+        this.index = 0;
+        this.speed = 0;
+        this.tolerance = 0;
+    }
+    get destination() {
+        return this.destinations[this.index];
+    }
+    patrol(speed, destinations, tolerance) {
+        this.destinations = destinations;
+        this.index = 0;
+        this.speed = speed;
+        this.tolerance = tolerance;
     }
 }

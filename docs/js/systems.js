@@ -1,3 +1,17 @@
+class EntityCleanupSystem extends CriterionSystem {
+    constructor(scene) {
+        super(scene);
+    }
+    update(deltaTime) {
+        let entities = this.#getEntities();
+        for (let entity of entities)
+            if (entity.get(CleanupComponent)?.destroy)
+                entity.destroy();
+    }
+    #getEntities() {
+        return this.scene.entities([CleanupComponent]);
+    }
+}
 class CameraSystem extends CriterionSystem {
     constructor(scene) {
         super(scene);
@@ -15,18 +29,9 @@ class SpriteRendererSystem extends CriterionSystem {
         super(scene);
     }
     update(deltaTime) {
-        //Animate sprite
-        let sprites = this.#getSpriteBlueprints();
-        for (let sprite of sprites) {
-            if (sprite.animator?.playing === true)
-                sprite.sprite.setCurrentFrame(sprite.animator.currentFrame);
-        }
         //Render sprites to screen
         let shader = this.scene.engine.resourceManager.get(RenderableSpriteShader);
         shader.run(this.scene);
-    }
-    #getSpriteBlueprints() {
-        return CriterionBlueprint.blueprints(this.scene, RenderableSpriteBlueprint);
     }
 }
 class AnimatorSystem extends CriterionSystem {
@@ -36,11 +41,74 @@ class AnimatorSystem extends CriterionSystem {
     update(deltaTime) {
         let entities = this.#getAnimators();
         for (let entity of entities) {
-            let animator = entity.get(AnimatorComponent);
-            animator.update(deltaTime, entity);
+            this.#animate(deltaTime, entity);
+        }
+    }
+    #animate(deltaTime, entity) {
+        let animator = entity.get(AnimatorComponent);
+        if (!animator.animation)
+            return;
+        //If the animation just started, trigger any key frames for start frame
+        if (animator.deltaTime < 0) {
+            animator.deltaTime = 0;
+            this.#animateComponents(animator, entity);
+            return;
+        }
+        let elapsedTime = animator.deltaTime + deltaTime;
+        while (elapsedTime >= animator.animation.frameDuration) {
+            animator.deltaTime = animator.animation.frameDuration;
+            animator.frame++;
+            if (animator.frame > animator.animation.endFrame) {
+                animator.iteration++;
+                if (animator.animation.iterations >= 0 && animator.iteration > animator.animation.iterations) {
+                    animator.playing = false;
+                    animator.frame = animator.animation.finishedFrame ?? animator.frame;
+                }
+                else
+                    animator.frame = animator.animation.startFrame;
+            }
+            elapsedTime -= animator.animation.frameDuration;
+            this.#animateComponents(animator, entity);
+            if (animator.finished) {
+                animator.stop();
+                return;
+            }
+        }
+        animator.deltaTime = elapsedTime;
+    }
+    #animateComponents(animator, entity) {
+        for (let component of animator.animation.animatableComponents) {
+            entity.get(component)?.animate(entity);
         }
     }
     #getAnimators() {
-        return this.scene.entities(AnimatorComponent);
+        return this.scene.entities([AnimatorComponent]);
+    }
+}
+class PatrolSystem extends CriterionSystem {
+    constructor(scene) {
+        super(scene);
+    }
+    update(deltaTime) {
+        let navigations = this.#getNavigations();
+        for (let navigation of navigations) {
+            if (!navigation.navigator.navigating || (navigation.patroller.destinations?.length ?? 0) === 0)
+                continue;
+            //Determine how far we need to travel
+            let distance = navigation.navigator.destination.subtract(navigation.transform.position);
+            let translation = distance.normalize().scale(deltaTime * navigation.patroller.speed);
+            //Check if we've arrived at our destination
+            if (distance.magnitudeSquared() < navigation.patroller.tolerance || translation.magnitudeSquared() > distance.magnitudeSquared()) {
+                navigation.transform.position = navigation.navigator.destination;
+                //Go to the next waypoint
+                navigation.patroller.index = (++navigation.patroller.index) % navigation.patroller.destinations.length;
+                navigation.navigate();
+            }
+            else
+                navigation.transform.position = navigation.transform.position.add(translation);
+        }
+    }
+    #getNavigations() {
+        return CriterionBlueprint.blueprints(this.scene, PatrolLocationBlueprint);
     }
 }

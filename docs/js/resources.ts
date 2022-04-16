@@ -39,30 +39,30 @@ class Mesh {
     }
 }
 
+interface IAnimatableComponent extends CriterionComponent {
+    animate(entity:CriterionEntity);
+}
+
 class AnimationSequence {
     startFrame:number;
     endFrame:number;
-    frameLength:number;
-    keyframes:Map<number, AnimationKeyFrame>;
-    //The frame to go to when animation stops
-    stoppedFrame:number;
+    frameDuration:number;
+    animatableComponents:(new (...args) => IAnimatableComponent)[];
+    //The frame to go to when animation stops/finishes
+    finishedFrame:number;
     //How many times to repeat
-    repetitions:number;
+    iterations:number;
     //Whether or not the animation can be interupted
-    canInterupt:boolean;
+    interruptible:boolean;
 
-    constructor(startFrame:number, endFrame:number, frameLength:number, keyframes?:Map<number, AnimationKeyFrame>, repetitions:number = -1)
+    constructor(startFrame:number, endFrame:number, frameDuration:number, animatableComponents:(new (...args) => IAnimatableComponent)[] = [], iterations:number = -1, interruptible:boolean = true, finishedFrame:number = null)
     {
         this.startFrame = startFrame;
         this.endFrame = endFrame;
-        this.frameLength = frameLength;
-        this.keyframes = keyframes ?? new Map();
-        this.repetitions = repetitions;
-        this.stoppedFrame = null;
-        this.canInterupt = true;
+        this.frameDuration = frameDuration;
+        this.animatableComponents = animatableComponents;
+        this.iterations = iterations;
+        this.interruptible = interruptible;
+        this.finishedFrame = finishedFrame;
     }
-}
-
-interface AnimationKeyFrame {
-    update(deltaTime:number, entity:CriterionEntity);
 }

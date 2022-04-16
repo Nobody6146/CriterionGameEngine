@@ -1,12 +1,15 @@
 class TestScene extends CriterionScene
 {
     async prepare() {
+        this.registerComponent(CleanupComponent);
         this.registerComponent(TransformComponent);
         this.registerComponent(MeshComponent);
         this.registerComponent(SpriteComponent);
         this.registerComponent(RendererComponent);
         this.registerComponent(CameraComponent);
         this.registerComponent(AnimatorComponent);
+        this.registerComponent(NavigatorComponent);
+        this.registerComponent(PatrollerComponent);
 
         //create our shader
         let shaderProgram = RenderableSpriteShader.create(this.engine);
@@ -27,7 +30,9 @@ class TestScene extends CriterionScene
         //Add systems
         this.addSystem(CameraSystem);
         this.addSystem(AnimatorSystem);
+        this.addSystem(PatrolSystem);
         this.addSystem(SpriteRendererSystem);
+        this.addSystem(EntityCleanupSystem);
 
         //Create camera
         let camera = CameraBluePrint.create(this);
@@ -35,18 +40,22 @@ class TestScene extends CriterionScene
         //Create player
         let player = PlayerBlueprint.create(this);
         player.animator = new AnimatorComponent();
-        let keyframes:Map<number, AnimationKeyFrame> = new Map();
-        keyframes.set(3, {
-            update(deltaTime:number,entity:CriterionEntity) {
-                console.log("Animation Completed!");
-            }
-        });
-        let animation = new AnimationSequence(0, 3, .75, keyframes);
+        let animation = new AnimationSequence(0, 3, .75, [SpriteComponent]);
         player.animator.animate(animation);
+        let patroller = CriterionBlueprint.createEntity(player.entity, PatrolLocationBlueprint);
+        patroller.patrol(.5, [ 
+            new Vector3f([-.5, -.5, 0]),
+            new Vector3f([-.5, .5, 0]),
+            new Vector3f([.5, .5, 0]),
+            new Vector3f([.5, -.5, 0])
+        ]);
 
         let player2 = PlayerBlueprint.create(this);
         player2.transform.position.x += .25;
         player2.sprite.setColor(new Vector4f([1, 0, 0, 1]));
+        player2.entity.add(CleanupComponent)
+        //Make the player delete itself after 5 seconds
+        player2.animator.animate(new AnimationSequence(0, 0, 5, [CleanupComponent], 1));
     }
 
     cleanup() {

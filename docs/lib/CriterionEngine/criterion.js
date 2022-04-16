@@ -362,6 +362,9 @@ class CriterionEngine {
         window.requestAnimationFrame(this.#update.bind(this));
         return true;
     }
+    terminate() {
+        this.#running = false;
+    }
     #update(timestamp) {
         this.#deltaTime = (timestamp - this.#lastFrame) / 1000;
         this.#lastFrame = timestamp;
@@ -377,7 +380,10 @@ class CriterionEngine {
             this.#logger.engine("Game terminated");
         }
     }
-    getFrameRate = function () {
+    get deltaTime() {
+        return this.#deltaTime;
+    }
+    frameRate = function () {
         return 1 / this.#deltaTime;
     };
 }
@@ -556,8 +562,6 @@ class CriterionEntity {
         this.#scene.destroyEntity(this.#id);
     }
 }
-class CriterionComponent {
-}
 class CriterionSystem {
     #scene;
     constructor(scene) {
@@ -576,7 +580,6 @@ class CriterionScene {
     #nextEntityId;
     #entities;
     #componentTypes;
-    #destroyedEntities;
     #systems;
     constructor(engine) {
         this.#engine = engine;
@@ -584,7 +587,6 @@ class CriterionScene {
         this.#nextEntityId = 0;
         this.#entities = new Map();
         this.#componentTypes = new Set();
-        this.#destroyedEntities = new Set();
         this.#systems = new Map();
     }
     get engine() {
@@ -602,15 +604,6 @@ class CriterionScene {
         //Update systems
         for (let system of this.#systems.values())
             system.update(deltaTime);
-        //Cleanup any removed entities
-        this.#cleanupEntities();
-    }
-    #cleanupEntities() {
-        for (let entityId of this.#destroyedEntities) {
-            if (!this.#entities.has(entityId))
-                return;
-            this.#entities.delete(entityId);
-        }
     }
     system(systemType) {
         return this.#systems.get(systemType);
@@ -660,7 +653,7 @@ class CriterionScene {
         return this.#entities.get(entityId);
     }
     /** Returns a map of entities that matches the set of components */
-    entities(...componentTypes) {
+    entities(componentTypes) {
         let entities = [];
         for (let entity of this.#entities.values()) {
             let passed = true;
@@ -683,7 +676,9 @@ class CriterionScene {
         return entity;
     }
     destroyEntity(entityId) {
-        this.#destroyedEntities.add(entityId);
+        if (!this.#entities.has(entityId))
+            return;
+        this.#entities.delete(entityId);
     }
 }
 class CriterionBlueprint {
@@ -729,11 +724,11 @@ class CriterionBlueprint {
     }
     static entities(scene, blueprintType) {
         let dummyBlueprint = CriterionBlueprint.createDummy(scene, blueprintType);
-        return scene.entities(...dummyBlueprint.requiredComponents());
+        return scene.entities(dummyBlueprint.requiredComponents());
     }
     static blueprints(scene, blueprintType) {
         let dummyBlueprint = CriterionBlueprint.createDummy(scene, blueprintType);
-        let entities = scene.entities(...dummyBlueprint.requiredComponents());
+        let entities = scene.entities(dummyBlueprint.requiredComponents());
         let blueprints = [];
         for (let entity of entities) {
             let blueprint = new blueprintType(entity).load();

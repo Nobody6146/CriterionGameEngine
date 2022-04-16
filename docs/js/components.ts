@@ -1,10 +1,23 @@
-class TransformComponent extends CriterionComponent {
+class CleanupComponent implements CriterionComponent, IAnimatableComponent {
+    destroy:boolean;
+
+    constructor() {
+        this.destroy = false;
+    }
+
+    animate(entity: CriterionEntity) {
+        let animator = entity.get(AnimatorComponent);
+        if(animator?.finished === true)
+            this.destroy = true;   
+    }
+}
+
+class TransformComponent implements CriterionComponent {
     position:Vector3f;
     rotation:Vector3f;
     scale:Vector3f;
 
     constructor() {
-        super();
         this.position = new Vector3f([0,0,0]);
         this.rotation = new Vector3f();
         this.scale = new Vector3f([1,1,1]);
@@ -15,36 +28,33 @@ class TransformComponent extends CriterionComponent {
     }
 }
 
-class RendererComponent extends CriterionComponent
+class RendererComponent implements CriterionComponent
 {
     layer:number;
 
     constructor() {
-        super();
         this.layer = 0;
     }
 }
 
-class CameraComponent extends CriterionComponent 
+class CameraComponent implements CriterionComponent 
 {
     projection:Matrix4f;
     view:Matrix4f;
 
     constructor() {
-        super();
         this.projection = Matrix4f.identity();
         this.view = Matrix4f.identity();
     }
 }
 
-class MeshComponent extends CriterionComponent
+class MeshComponent implements CriterionComponent
 {
     vertices:Vector3f[];
     textureCoordinates:Vector2f[];
     normals:Vector3f[];
 
     constructor() {
-        super();
         this.vertices = [];
         this.textureCoordinates = [];
         this.normals = [];
@@ -58,23 +68,22 @@ class MeshComponent extends CriterionComponent
     }
 }
 
-class SpriteComponent extends CriterionComponent {
+class SpriteComponent implements IAnimatableComponent, CriterionComponent {
     spriteSheet:SpriteSheet;
     texture:WebGLTexture;
     color:Vector4f;
-    currentFrame:number;
+    frame:number;
 
     constructor() {
-        super();
         this.spriteSheet = null;
         this.texture = null;
         this.color = new Vector4f([1,1,1,1]);
-        this.currentFrame = 0;
+        this.frame = 0;
     }
 
     get frameCoordinates():{start:Vector2f, end:Vector2f} {
         return this.spriteSheet != null
-            ? this.spriteSheet.getFrameCoordinates(this.currentFrame)
+            ? this.spriteSheet.getFrameCoordinates(this.frame)
             : {
                 start: new Vector2f([0,0]),
                 end: new Vector2f([1,1])
@@ -82,7 +91,7 @@ class SpriteComponent extends CriterionComponent {
     }
 
     setCurrentFrame(frame:number):number {
-        this.currentFrame = frame;
+        this.frame = frame;
         return frame;
     }
 
@@ -90,7 +99,7 @@ class SpriteComponent extends CriterionComponent {
         this.texture = texture;
         this.color = null;
         this.spriteSheet = null;
-        this.currentFrame = 0;
+        this.frame = 0;
         return texture;
     }
 
@@ -105,37 +114,51 @@ class SpriteComponent extends CriterionComponent {
         this.color = color;
         this.texture = null;
         this.spriteSheet = null;
-        this.currentFrame = 0;
+        this.frame = 0;
         return color;
+    }
+
+    animate(entity:CriterionEntity) {
+        let animator = entity.get(AnimatorComponent);
+        if(animator == null)
+            return;
+        this.frame = animator.frame;
     }
 }
 
-class AnimatorComponent extends CriterionComponent {
+class AnimatorComponent implements CriterionComponent {
     
-    currentFrame:number;
+    frame:number;
+    iteration:number;
     deltaTime:number;
     animation:AnimationSequence;
 
     paused:boolean;
+    playing:boolean;
 
     constructor() {
-        super();
         this.animation = null;
-        this.currentFrame = 0;
+        this.frame = 0;
+        this.iteration = 0;
         this.deltaTime = 0;
 
         this.paused = false;
+        this.playing = false;
     }
 
-    get playing():boolean {
-        return this.animation != null;
+    get finished() {
+        return this.animation != null && !this.playing;
     }
 
     animate(animation:AnimationSequence):void {
+        if(this.animation?.interruptible === false)
+            return;
         this.animation = animation;
         this.deltaTime = -1;
+        this.iteration = 1;
         this.paused = false;
-        this.currentFrame = animation.startFrame;
+        this.playing = true;
+        this.frame = animation.startFrame;
     }
 
     pause(toggle:boolean):void {
@@ -144,6 +167,7 @@ class AnimatorComponent extends CriterionComponent {
 
     stop():void {
         this.paused = false;
+        this.playing = false;
         this.animation = null;
     }
 
@@ -151,45 +175,64 @@ class AnimatorComponent extends CriterionComponent {
         if(!this.animation)
             return;
         if(frame < this.animation.startFrame)
-            this.currentFrame = this.animation.startFrame;
+            this.frame = this.animation.startFrame;
         else if(frame > this.animation.endFrame)
-            this.currentFrame = this.animation.endFrame;
+            this.frame = this.animation.endFrame;
         else
-            this.currentFrame = frame;
+            this.frame = frame;
         this.deltaTime = 0;
     }
 
     clearTime() {
         this.deltaTime = 0;
     }
+}
 
-    update(deltaTime:number, entity:CriterionEntity) {
-        if(!this.animation)
-            return;
+class NavigatorComponent implements CriterionComponent {
 
-        //If the animation just started, trigger any key frames for start frame
-        if(this.deltaTime < 0) {
-            this.deltaTime = 0;
-            this.#executeKeyFrames(0, entity);
-            return;
-        }
+    start:Vector3f;
+    destination:Vector3f;
+    navigating:boolean;
 
-        this.deltaTime += deltaTime;
-        
-        while(this.deltaTime > this.animation.frameLength)
-        {
-            this.currentFrame = this.currentFrame < this.animation.endFrame
-                ? this.currentFrame + 1
-                : this.animation.startFrame;
-            this.deltaTime -= this.animation.frameLength;
-            this.#executeKeyFrames(deltaTime, entity);
-        }       
+    constructor() {
+        this.destination = null;
+        this.navigating = false;
+        this.start = null;
     }
 
-    #executeKeyFrames(deltaTime:number, entity:CriterionEntity) {
-        let keyframe = this.animation.keyframes.get(this.currentFrame);
-        if(!keyframe)
-            return;
-        keyframe.update(deltaTime, entity);
+    navigate(start:Vector3f, destination:Vector3f) {
+        this.destination = destination;
+        this.start = start;
+        this.navigating = true;
+    }
+
+    stop() {
+        this.navigating = false;
+    }
+}
+
+class PatrollerComponent implements CriterionComponent {
+
+    destinations:Vector3f[];
+    index:number;
+    speed:number;
+    tolerance:number;
+
+    constructor() {
+        this.destinations = [];
+        this.index = 0;
+        this.speed = 0;
+        this.tolerance = 0;
+    }
+
+    get destination():Vector3f {
+        return this.destinations[this.index];
+    }
+
+    patrol(speed:number, destinations:Vector3f[], tolerance:number):void {
+        this.destinations = destinations;
+        this.index = 0;
+        this.speed = speed;
+        this.tolerance = tolerance;
     }
 }
