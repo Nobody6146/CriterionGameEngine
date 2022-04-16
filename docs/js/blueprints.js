@@ -1,28 +1,49 @@
 class RenderableSpriteBlueprint extends CriterionBlueprint {
+    //Required components
     transform;
     mesh;
     sprite;
     renderer;
+    //optional components
+    animator;
     constructor(entity) {
         super(entity);
     }
     requiredComponents() {
         return [TransformComponent, MeshComponent, SpriteComponent, RendererComponent];
     }
+    transformedVertices() {
+        let results = [];
+        let transformation = this.transform.transformation;
+        for (let vertex of this.mesh.vertices) {
+            results.push(new Vector3f(transformation.multiplyVector(new Vector4f([...vertex.array, 1])).array));
+        }
+        return results;
+    }
+    transformedTextureCoordinates() {
+        let results = [];
+        let frame = this.sprite.frameCoordinates;
+        let frameSize = new Vector2f([frame.end.x - frame.start.x, frame.end.y - frame.start.y]);
+        for (let coordinate of this.mesh.textureCoordinates) {
+            results.push(new Vector2f([frame.start.x + frameSize.x * coordinate.x, frame.start.y + frameSize.y * coordinate.y]));
+        }
+        return results;
+    }
 }
 class PlayerBlueprint extends RenderableSpriteBlueprint {
     constructor(entity) {
         super(entity);
     }
-    #intialize() {
+    #intialize(engine) {
         this.transform.scale.array.set([.5, .5, .5]);
-        this.mesh.set("player");
+        let mesh = engine.resourceManager.get(Mesh, "player");
+        this.mesh.set(mesh);
         this.renderer.layer = 1;
-        this.sprite.setTexture("player");
+        this.sprite.setSpriteSheet(engine.resourceManager.get(SpriteSheet, "player"));
         return this;
     }
     static create(scene) {
-        return PlayerBlueprint.createEntity(scene, PlayerBlueprint).#intialize();
+        return PlayerBlueprint.createEntity(scene, PlayerBlueprint).#intialize(scene.engine);
     }
 }
 class CameraBluePrint extends CriterionBlueprint {

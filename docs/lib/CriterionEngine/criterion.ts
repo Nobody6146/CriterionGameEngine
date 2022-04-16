@@ -785,8 +785,18 @@ abstract class CriterionScene {
     registerComponent<Type extends CriterionComponent>(componentType:new (...args) => Type):void {
         this.#componentTypes.add(componentType);
     }
+    /** Gets all the components of the type attached to entities */
+    components<T extends CriterionComponent>(componentType:new (...args) => T): T[] {
+        let components:T[] = [];
+        for(let entity of this.#entities.values()) {
+            let component = entity.get(componentType);
+            if(component)
+                components.push(component);
+        }
+        return components;
+    }
 
-    /** Returns a list of entities that have the specified components */
+    /** Returns an entity */
     entity(entityId:number): CriterionEntity {
         return this.#entities.get(entityId);
     }

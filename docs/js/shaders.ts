@@ -43,10 +43,10 @@ class RenderableSpriteShader extends CriterionShaderProgram<CriterionRenderBatch
         var blueprints = this.#getRenderables(scene);
         for(let blueprint of blueprints) {
             let renderable:CriterionRenderBatchEntity = {
-                vertices: blueprint.mesh.transformedVertices(blueprint.transform.transformation),
-                textureCoordinates: blueprint.mesh.transformedTextureCoordinates(blueprint.sprite.frameOffset, blueprint.sprite.frameSize),
+                vertices: blueprint.transformedVertices(),
+                textureCoordinates: blueprint.transformedTextureCoordinates(),
                 color: blueprint.sprite.color,
-                texture: blueprint.sprite.texture,
+                texture: blueprint.sprite.spriteSheet?.texture ?? blueprint.sprite.texture,
                 layer: blueprint.transform.position.z,
             }
             renderBatcher.buffer(renderable);

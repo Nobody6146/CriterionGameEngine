@@ -1,9 +1,12 @@
 class RenderableSpriteBlueprint extends CriterionBlueprint
 {
+    //Required components
     transform:TransformComponent;
     mesh:MeshComponent;
     sprite:SpriteComponent;
     renderer:RendererComponent;
+    //optional components
+    animator:AnimatorComponent;
 
     constructor(entity:CriterionEntity) {
         super(entity);
@@ -11,6 +14,25 @@ class RenderableSpriteBlueprint extends CriterionBlueprint
 
     requiredComponents(): (new (...args: any[]) => CriterionComponent)[] {
         return [TransformComponent, MeshComponent, SpriteComponent, RendererComponent];
+    }
+
+    transformedVertices():Vector3f[] {
+        let results:Vector3f[] = [];
+        let transformation = this.transform.transformation;
+        for(let vertex of this.mesh.vertices) {
+            results.push(new Vector3f(transformation.multiplyVector(new Vector4f([...vertex.array, 1])).array));
+        }
+        return results;
+    }
+
+    transformedTextureCoordinates():Vector2f[] {
+        let results:Vector2f[] = [];
+        let frame = this.sprite.frameCoordinates;
+        let frameSize = new Vector2f([frame.end.x - frame.start.x, frame.end.y - frame.start.y])
+        for(let coordinate of this.mesh.textureCoordinates) {
+            results.push(new Vector2f([frame.start.x + frameSize.x * coordinate.x, frame.start.y + frameSize.y * coordinate.y]));
+        }
+        return results;
     }
 }
 
@@ -20,16 +42,17 @@ class PlayerBlueprint extends RenderableSpriteBlueprint {
         super(entity);
     }
 
-    #intialize() {
+    #intialize(engine:CriterionEngine) {
         this.transform.scale.array.set([.5,.5,.5]);
-        this.mesh.set("player");
+        let mesh = engine.resourceManager.get(Mesh, "player");
+        this.mesh.set(mesh);
         this.renderer.layer = 1;
-        this.sprite.setTexture("player");
+        this.sprite.setSpriteSheet(engine.resourceManager.get(SpriteSheet, "player"));
         return this;
     }
 
     static create(scene: CriterionScene): PlayerBlueprint {
-        return PlayerBlueprint.createEntity(scene, PlayerBlueprint).#intialize();
+        return PlayerBlueprint.createEntity(scene, PlayerBlueprint).#intialize(scene.engine);
     }
 }
 

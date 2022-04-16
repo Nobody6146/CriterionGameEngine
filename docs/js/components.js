@@ -39,142 +39,121 @@ class MeshComponent extends CriterionComponent {
         this.normals = [];
     }
     set(mesh) {
-        if (typeof mesh === "string")
-            mesh = CriterionEngine.instance.resourceManager.get(Mesh, mesh);
         this.vertices = mesh.vertices;
         this.textureCoordinates = mesh.uvs;
         this.normals = mesh.normals;
-    }
-    transformedVertices(transformation) {
-        let results = [];
-        for (let vertex of this.vertices) {
-            results.push(new Vector3f(transformation.multiplyVector(new Vector4f([...vertex.array, 1])).array));
-        }
-        return results;
-    }
-    transformedTextureCoordinates(frameStart, frameSize) {
-        let results = [];
-        for (let coordinate of this.textureCoordinates) {
-            results.push(new Vector2f([frameStart.x + coordinate.x * frameSize.x, frameStart.y + coordinate.y * frameSize.y]));
-        }
-        return results;
+        return this;
     }
 }
 class SpriteComponent extends CriterionComponent {
-    #spriteSheet;
-    #texture;
-    #color;
-    #currentFrame;
+    spriteSheet;
+    texture;
+    color;
+    currentFrame;
     constructor() {
         super();
-        this.#spriteSheet = null;
-        this.#texture = null;
-        this.#color = new Vector4f([1, 1, 1, 1]);
-        this.#currentFrame = 0;
+        this.spriteSheet = null;
+        this.texture = null;
+        this.color = new Vector4f([1, 1, 1, 1]);
+        this.currentFrame = 0;
     }
-    get spriteSheet() {
-        return this.#spriteSheet;
-    }
-    get texture() {
-        return this.#texture;
-    }
-    get color() {
-        return this.#color;
-    }
-    get currentFrame() {
-        return this.#currentFrame;
-    }
-    get frameOffset() {
-        return this.#spriteSheet != null
-            ? this.#spriteSheet.getFrame(this.#currentFrame)
-            : new Vector2f([0, 0]);
-    }
-    get frameSize() {
-        return this.#spriteSheet != null
-            ? new Vector2f([this.#spriteSheet.frameWidth, this.#spriteSheet.frameHeight])
-            : new Vector2f([1, 1]);
+    get frameCoordinates() {
+        return this.spriteSheet != null
+            ? this.spriteSheet.getFrameCoordinates(this.currentFrame)
+            : {
+                start: new Vector2f([0, 0]),
+                end: new Vector2f([1, 1])
+            };
     }
     setCurrentFrame(frame) {
-        this.#currentFrame = frame;
+        this.currentFrame = frame;
         return frame;
     }
     setTexture(texture) {
-        if (typeof texture === "string")
-            texture = CriterionEngine.instance.resourceManager.get(WebGLTexture, texture);
-        this.#texture = texture;
-        this.#color = null;
-        this.#spriteSheet = null;
-        this.#currentFrame = 0;
+        this.texture = texture;
+        this.color = null;
+        this.spriteSheet = null;
+        this.currentFrame = 0;
         return texture;
     }
     setSpriteSheet(spriteSheet) {
-        if (typeof spriteSheet === "string")
-            spriteSheet = CriterionEngine.instance.resourceManager.get(SpriteSheet, spriteSheet);
-        this.#spriteSheet = spriteSheet;
-        this.#texture = null;
-        this.#color = null;
+        this.spriteSheet = spriteSheet;
+        this.texture = null;
+        this.color = null;
         return spriteSheet;
     }
     setColor(color) {
-        this.#color = color;
-        this.#texture = null;
-        this.#spriteSheet = null;
-        this.#currentFrame = 0;
+        this.color = color;
+        this.texture = null;
+        this.spriteSheet = null;
+        this.currentFrame = 0;
         return color;
     }
 }
-class AnimationComponent extends CriterionComponent {
-    #startFrame;
-    #endFrame;
-    #currentFrame;
-    #deltaTime;
-    #frameLength;
-    #paused;
-    #playing;
+class AnimatorComponent extends CriterionComponent {
+    currentFrame;
+    deltaTime;
+    animation;
+    paused;
     constructor() {
         super();
-        this.#startFrame = 0;
-        this.#endFrame = 0;
-        this.#currentFrame = 0;
-        this.#deltaTime = 0;
-        this.#frameLength = 0;
-        this.#paused = false;
-        this.#playing = false;
+        this.animation = null;
+        this.currentFrame = 0;
+        this.deltaTime = 0;
+        this.paused = false;
     }
-    animate(startFrame, endFrame, frameLength, initialFrame = null) {
-        this.#startFrame = startFrame;
-        this.#endFrame = endFrame;
-        this.#frameLength = frameLength;
-        this.#deltaTime = 0;
-        this.#paused = false;
-        this.#playing = true;
-        this.setFrame(initialFrame ?? this.#startFrame);
+    get playing() {
+        return this.animation != null;
+    }
+    animate(animation) {
+        this.animation = animation;
+        this.deltaTime = -1;
+        this.paused = false;
+        this.currentFrame = animation.startFrame;
     }
     pause(toggle) {
-        this.#paused = toggle;
+        this.paused = toggle;
     }
     stop() {
-        this.#paused = false;
-        this.#playing = false;
+        this.paused = false;
+        this.animation = null;
     }
     setFrame(frame) {
-        if (frame < this.#startFrame)
-            this.#currentFrame = this.#startFrame;
-        else if (frame > this.#endFrame)
-            this.#currentFrame = this.#endFrame;
+        if (!this.animation)
+            return;
+        if (frame < this.animation.startFrame)
+            this.currentFrame = this.animation.startFrame;
+        else if (frame > this.animation.endFrame)
+            this.currentFrame = this.animation.endFrame;
         else
-            this.#currentFrame = frame;
+            this.currentFrame = frame;
+        this.deltaTime = 0;
     }
     clearTime() {
-        this.#deltaTime = 0;
+        this.deltaTime = 0;
     }
-    update(deltaTime) {
-        this.#deltaTime += deltaTime;
-        while (this.#deltaTime > this.#frameLength) {
-            this.#currentFrame = this.#currentFrame < this.#endFrame
-                ? this.#currentFrame + 1
-                : this.#startFrame;
-            this.#deltaTime -= this.#frameLength;
+    update(deltaTime, entity) {
+        if (!this.animation)
+            return;
+        //If the animation just started, trigger any key frames for start frame
+        if (this.deltaTime < 0) {
+            this.deltaTime = 0;
+            this.#executeKeyFrames(0, entity);
+            return;
         }
+        this.deltaTime += deltaTime;
+        while (this.deltaTime > this.animation.frameLength) {
+            this.currentFrame = this.currentFrame < this.animation.endFrame
+                ? this.currentFrame + 1
+                : this.animation.startFrame;
+            this.deltaTime -= this.animation.frameLength;
+            this.#executeKeyFrames(deltaTime, entity);
+        }
+    }
+    #executeKeyFrames(deltaTime, entity) {
+        let keyframe = this.animation.keyframes.get(this.currentFrame);
+        if (!keyframe)
+            return;
+        keyframe.update(deltaTime, entity);
     }
 }

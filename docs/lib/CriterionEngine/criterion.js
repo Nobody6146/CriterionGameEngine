@@ -653,7 +653,17 @@ class CriterionScene {
     registerComponent(componentType) {
         this.#componentTypes.add(componentType);
     }
-    /** Returns a list of entities that have the specified components */
+    /** Gets all the components of the type attached to entities */
+    components(componentType) {
+        let components = [];
+        for (let entity of this.#entities.values()) {
+            let component = entity.get(componentType);
+            if (component)
+                components.push(component);
+        }
+        return components;
+    }
+    /** Returns an entity */
     entity(entityId) {
         return this.#entities.get(entityId);
     }
