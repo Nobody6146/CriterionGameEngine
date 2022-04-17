@@ -101,7 +101,7 @@ class CriterionMeshUtils {
                 new Vector3f([0.5, 0.5, 0]),
                 new Vector3f([-0.5, 0.5, 0])
             ],
-            uv: [
+            uvs: [
                 new Vector2f([0, 1,]),
                 new Vector2f([0, 0,]),
                 new Vector2f([1, 0,]),
@@ -178,18 +178,26 @@ class FontSheet {
         this.height = 0;
         this.characters = new Map();
     }
+    scale() {
+        this.lineHeight /= this.width;
+        this.baseline /= this.width;
+    }
 }
 class FontCharacter {
     asciiValue;
     lineOffset;
     lineAdvance;
     frameStart;
+    width;
+    height;
     frameEnd;
     constructor(sheetWidth, sheetHeight, asciiValue, x, y, width, height, xoffset, yoffset, lineAdvance) {
         this.asciiValue = asciiValue;
         this.lineOffset = new Vector2f([xoffset / sheetWidth, yoffset / sheetHeight]);
-        this.lineAdvance = lineAdvance;
+        this.lineAdvance = lineAdvance / sheetWidth;
         this.frameStart = new Vector2f([x / sheetWidth, y / sheetHeight]);
+        this.width = width / sheetWidth;
+        this.height = height / sheetHeight;
         this.frameEnd = new Vector2f([(x + width) / sheetWidth, (y + height) / sheetHeight]);
     }
 }
@@ -198,17 +206,17 @@ class CriterionFontUtils {
         let text = await (await fetch(url)).text();
         let lines = text.split("\n");
         let fontSheet = new FontSheet();
-        for (let line in lines) {
-            if (line.startsWith("info")) {
+        for (let line of lines) {
+            if (line.startsWith("info ")) {
                 fontSheet.fontSize = this.#getAttribute("size", line);
             }
-            else if (line.startsWith("common")) {
-                fontSheet.lineHeight = this.#getAttribute("lineHeight", line);
-                fontSheet.baseline = this.#getAttribute("base", line);
+            else if (line.startsWith("common ")) {
                 fontSheet.width = this.#getAttribute("scaleW", line);
                 fontSheet.height = this.#getAttribute("scaleH", line);
+                fontSheet.lineHeight = this.#getAttribute("lineHeight", line) / fontSheet.width;
+                fontSheet.baseline = this.#getAttribute("base", line) / fontSheet.width;
             }
-            else if (line.startsWith("char")) {
+            else if (line.startsWith("char ")) {
                 let character = new FontCharacter(fontSheet.width, fontSheet.height, this.#getAttribute("id", line), this.#getAttribute("x", line), this.#getAttribute("y", line), this.#getAttribute("width", line), this.#getAttribute("height", line), this.#getAttribute("xoffset", line), this.#getAttribute("yoffset", line), this.#getAttribute("xadvance", line));
                 fontSheet.characters.set(character.asciiValue, character);
             }
@@ -216,6 +224,7 @@ class CriterionFontUtils {
         return fontSheet;
     }
     static #getAttribute(name, line) {
-        return Number.parseInt(line.match("lineHeight=(\w)")?.[1] ?? "0");
+        let regex = new RegExp(`${name}=(\\w+)`);
+        return Number.parseInt(line.match(regex)?.[1] ?? "0");
     }
 }

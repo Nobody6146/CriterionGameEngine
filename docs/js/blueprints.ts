@@ -20,7 +20,7 @@ class RenderableSpriteBlueprint extends CriterionBlueprint
         let results:Vector3f[] = [];
         let transformation = this.transform.transformation;
         for(let vertex of this.mesh.vertices) {
-            results.push(new Vector3f(transformation.multiplyVector(new Vector4f([...vertex.array, 1])).array));
+            results.push(vertex.transform(transformation));
         }
         return results;
     }
@@ -33,6 +33,38 @@ class RenderableSpriteBlueprint extends CriterionBlueprint
             results.push(new Vector2f([frame.start.x + frameSize.x * coordinate.x, frame.start.y + frameSize.y * coordinate.y]));
         }
         return results;
+    }
+}
+
+class RenderableTextBlueprint extends CriterionBlueprint
+{
+    //Required components
+    transform:TransformComponent;
+    mesh:MeshComponent;
+    text:TextComponent;
+    font:FontComponent;
+    renderer:RendererComponent;
+    //optional components
+    animator:AnimatorComponent;
+
+    constructor(entity:CriterionEntity) {
+        super(entity);
+    }
+
+    #intialize(engine:CriterionEngine) {
+        this.transform.scale.array.set([.5,.5,.5]);
+        this.mesh.set(CriterionMeshUtils.squareMesh());
+        this.renderer.layer = 2;
+        this.font.fontStyle = engine.resourceManager.get(FontStyle, "monospaced");
+        return this;
+    }
+
+    requiredComponents(): (new (...args: any[]) => CriterionComponent)[] {
+        return [TransformComponent, MeshComponent, TextComponent, FontComponent, RendererComponent];
+    }
+
+    static create(scene: CriterionScene): RenderableTextBlueprint {
+        return RenderableTextBlueprint.createEntity(scene, RenderableTextBlueprint).#intialize(scene.engine);
     }
 }
 

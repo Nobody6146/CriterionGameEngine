@@ -60,6 +60,12 @@ class MeshComponent implements CriterionComponent
         this.normals = [];
     }
 
+    clear() {
+        this.vertices = [];
+        this.textureCoordinates = [];
+        this.normals = [];
+    }
+
     set(mesh:Mesh):this {
         this.vertices = mesh.vertices;
         this.textureCoordinates = mesh.uvs;
@@ -203,21 +209,21 @@ class FontComponent implements CriterionComponent {
 
 class TextComponent implements CriterionComponent {
     string:string;
-    leftPaddig:number;
-    rightPadding:number;
-    topPadding:number;
-    bottomPadding:number;
-    lineSpacing:number;
+    // leftPaddig:number;
+    // rightPadding:number;
+    // topPadding:number;
+    // bottomPadding:number;
+    // lineSpacing:number;
     horizontalAlignment:HorizontalAlignment;
     verticalAlignment:VeriticalAlignment;
 
     constructor() {
         this.string = null;
-        this.leftPaddig = 0;
-        this.rightPadding = 0;
-        this.topPadding = 0;
-        this.bottomPadding = 0;
-        this.lineSpacing = 0;
+        // this.leftPaddig = 0;
+        // this.rightPadding = 0;
+        // this.topPadding = 0;
+        // this.bottomPadding = 0;
+        // this.lineSpacing = 0;
         this.horizontalAlignment = "left";
         this.verticalAlignment = "top";
     }

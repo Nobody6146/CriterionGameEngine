@@ -57,7 +57,7 @@ class Vector2f {
     scale(scalar:number): Vector2f {
         return new Vector2f([this.x * scalar, this.y * scalar]);
     }
-    divide = function(scalar:number): Vector2f{
+    divide(scalar:number): Vector2f{
         return this.scale(1 / scalar);
     }
 }
@@ -115,8 +115,11 @@ class Vector3f {
     scale(scalar:number): Vector3f {
         return new Vector3f([this.x * scalar, this.y * scalar, this.z * scalar]);
     }
-    divide = function(scalar:number): Vector3f {
+    divide(scalar:number): Vector3f {
         return this.scale(1 / scalar);
+    }
+    transform(transformation:Matrix4f): Vector3f {
+        return new Vector3f(transformation.multiplyVector(new Vector4f([...this.array, 1])).array);
     }
 }
 
@@ -204,7 +207,7 @@ class Vector4f {
     scale(scalar:number): Vector4f {
         return new Vector4f([this.x * scalar, this.y * scalar, this.z * scalar, this.w * scalar]);
     }
-    divide = function(scalar:number): Vector4f {
+    divide(scalar:number): Vector4f {
         return this.scale(1 / scalar);
     }
     equals(vector:Vector4f):boolean {

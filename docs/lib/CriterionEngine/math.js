@@ -51,9 +51,9 @@ class Vector2f {
     scale(scalar) {
         return new Vector2f([this.x * scalar, this.y * scalar]);
     }
-    divide = function (scalar) {
+    divide(scalar) {
         return this.scale(1 / scalar);
-    };
+    }
 }
 class Vector3f {
     #array;
@@ -105,9 +105,12 @@ class Vector3f {
     scale(scalar) {
         return new Vector3f([this.x * scalar, this.y * scalar, this.z * scalar]);
     }
-    divide = function (scalar) {
+    divide(scalar) {
         return this.scale(1 / scalar);
-    };
+    }
+    transform(transformation) {
+        return new Vector3f(transformation.multiplyVector(new Vector4f([...this.array, 1])).array);
+    }
 }
 //Vector4f==================
 class Vector4f {
@@ -190,9 +193,9 @@ class Vector4f {
     scale(scalar) {
         return new Vector4f([this.x * scalar, this.y * scalar, this.z * scalar, this.w * scalar]);
     }
-    divide = function (scalar) {
+    divide(scalar) {
         return this.scale(1 / scalar);
-    };
+    }
     equals(vector) {
         return this.x == vector.x && this.y == vector.y && this.z == vector.z && this.w == vector.w;
     }

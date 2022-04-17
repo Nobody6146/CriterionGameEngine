@@ -45,6 +45,11 @@ class MeshComponent {
         this.textureCoordinates = [];
         this.normals = [];
     }
+    clear() {
+        this.vertices = [];
+        this.textureCoordinates = [];
+        this.normals = [];
+    }
     set(mesh) {
         this.vertices = mesh.vertices;
         this.textureCoordinates = mesh.uvs;
@@ -165,20 +170,20 @@ class FontComponent {
 }
 class TextComponent {
     string;
-    leftPaddig;
-    rightPadding;
-    topPadding;
-    bottomPadding;
-    lineSpacing;
+    // leftPaddig:number;
+    // rightPadding:number;
+    // topPadding:number;
+    // bottomPadding:number;
+    // lineSpacing:number;
     horizontalAlignment;
     verticalAlignment;
     constructor() {
         this.string = null;
-        this.leftPaddig = 0;
-        this.rightPadding = 0;
-        this.topPadding = 0;
-        this.bottomPadding = 0;
-        this.lineSpacing = 0;
+        // this.leftPaddig = 0;
+        // this.rightPadding = 0;
+        // this.topPadding = 0;
+        // this.bottomPadding = 0;
+        // this.lineSpacing = 0;
         this.horizontalAlignment = "left";
         this.verticalAlignment = "top";
     }

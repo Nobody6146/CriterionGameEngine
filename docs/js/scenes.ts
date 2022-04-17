@@ -19,7 +19,7 @@ class TestScene extends CriterionScene
 
         //Generate our mesh
         let mesh = CriterionMeshUtils.squareMesh();
-        this.engine.resourceManager.add(new Mesh(mesh.vertices, mesh.uv, mesh.normals), "player");
+        this.engine.resourceManager.add(new Mesh(mesh.vertices, mesh.uvs, mesh.normals), "player");
 
         //Load our texture
         let texture = await CriterionTextureUtils.loadTexture(this.engine, "resources/images/tile.png");
@@ -29,12 +29,19 @@ class TestScene extends CriterionScene
         let spriteSheet = new SpriteSheet(texture.texture, texture.image.width, texture.image.height, 32, 32);
         this.engine.resourceManager.add(spriteSheet, "player");
 
+        //load font
+        let fontSheet = await CriterionFontUtils.loadFont("resources/fonts/monospaced.fnt")
+        let fontTexture = await CriterionTextureUtils.loadTexture(this.engine, "resources/images/monospaced.png");
+        this.engine.resourceManager.add(fontTexture.texture, "monospaced");
+        this.engine.resourceManager.add(new FontStyle(fontTexture.texture, fontSheet), "monospaced");
+
         //Add systems
         this.addSystem(ReadTestSytemEvents);
         this.addSystem(CameraSystem);
         this.addSystem(AnimatorSystem);
         this.addSystem(PatrolSystem);
         this.addSystem(SpriteBatcherSystem);
+        this.addSystem(TextBatcher);
         this.addSystem(BatchRendererSystem);
         this.addSystem(EntityCleanupSystem);
         this.addSystem(EventSystem);
@@ -68,6 +75,10 @@ class TestScene extends CriterionScene
             }
         });
         player2.animator.animate(new AnimationSequence(0,0, 5, [CleanupComponent], 1, keyframes));
+
+        // let texbox = RenderableTextBlueprint.create(this);
+        // texbox.entity.add(SpriteComponent);
+        // texbox.text.string = "Hi";
     }
 
     cleanup() {
