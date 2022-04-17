@@ -147,10 +147,40 @@ class AnimatorComponent {
             this.frame = this.animation.endFrame;
         else
             this.frame = frame;
-        this.deltaTime = 0;
+        this.deltaTime = -1;
     }
     clearTime() {
-        this.deltaTime = 0;
+        this.deltaTime = -1;
+    }
+}
+class FontComponent {
+    fontStyle;
+    // bold:boolean;
+    // italic:boolean;
+    // size:number;
+    // color:Vector4f;
+    constructor() {
+        this.fontStyle = null;
+    }
+}
+class TextComponent {
+    string;
+    leftPaddig;
+    rightPadding;
+    topPadding;
+    bottomPadding;
+    lineSpacing;
+    horizontalAlignment;
+    verticalAlignment;
+    constructor() {
+        this.string = null;
+        this.leftPaddig = 0;
+        this.rightPadding = 0;
+        this.topPadding = 0;
+        this.bottomPadding = 0;
+        this.lineSpacing = 0;
+        this.horizontalAlignment = "left";
+        this.verticalAlignment = "top";
     }
 }
 class NavigatorComponent {

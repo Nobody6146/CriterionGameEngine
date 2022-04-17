@@ -282,6 +282,7 @@ class CriterionEngine {
     #sceneManager;
     options;
     #lastFrame = null;
+    #frameStart = null;
     #deltaTime = null;
     #running = false;
     #canvas;
@@ -366,6 +367,7 @@ class CriterionEngine {
         this.#running = false;
     }
     #update(timestamp) {
+        this.#frameStart = timestamp;
         this.#deltaTime = (timestamp - this.#lastFrame) / 1000;
         this.#lastFrame = timestamp;
         this.#window.clear();
@@ -380,12 +382,15 @@ class CriterionEngine {
             this.#logger.engine("Game terminated");
         }
     }
+    get frameStart() {
+        return this.#frameStart;
+    }
     get deltaTime() {
         return this.#deltaTime;
     }
-    frameRate = function () {
+    get frameRate() {
         return 1 / this.#deltaTime;
-    };
+    }
 }
 class CriterionResourceManager {
     #engine;
@@ -1071,7 +1076,7 @@ class CriterionRenderBatcher {
         return 4;
     }
 }
-class CriterionShaderProgram {
+class CriterionShader {
     #program;
     #uniforms;
     #attributes;
@@ -1089,11 +1094,11 @@ class CriterionShaderProgram {
     get attributes() {
         return this.#attributes;
     }
-    run(scene) {
+    run(scene, batches) {
         scene.engine.memoryManager.startShaderProgram(this.#program);
         let entities = this.prepare(scene);
-        for (let entity of entities) {
-            this.render(scene, entity);
+        for (let batch of batches) {
+            this.render(scene, batch);
         }
         this.cleanup(scene);
         scene.engine.memoryManager.stopShaderProgram();

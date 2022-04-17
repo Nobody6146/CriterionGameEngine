@@ -163,3 +163,59 @@ class CriterionTextureUtils {
         };
     }
 }
+class FontSheet {
+    lineHeight;
+    baseline;
+    fontSize;
+    width;
+    height;
+    characters;
+    constructor() {
+        this.lineHeight = 0;
+        this.baseline = 0;
+        this.fontSize = 0;
+        this.width = 0;
+        this.height = 0;
+        this.characters = new Map();
+    }
+}
+class FontCharacter {
+    asciiValue;
+    lineOffset;
+    lineAdvance;
+    frameStart;
+    frameEnd;
+    constructor(sheetWidth, sheetHeight, asciiValue, x, y, width, height, xoffset, yoffset, lineAdvance) {
+        this.asciiValue = asciiValue;
+        this.lineOffset = new Vector2f([xoffset / sheetWidth, yoffset / sheetHeight]);
+        this.lineAdvance = lineAdvance;
+        this.frameStart = new Vector2f([x / sheetWidth, y / sheetHeight]);
+        this.frameEnd = new Vector2f([(x + width) / sheetWidth, (y + height) / sheetHeight]);
+    }
+}
+class CriterionFontUtils {
+    static async loadFont(url) {
+        let text = await (await fetch(url)).text();
+        let lines = text.split("\n");
+        let fontSheet = new FontSheet();
+        for (let line in lines) {
+            if (line.startsWith("info")) {
+                fontSheet.fontSize = this.#getAttribute("size", line);
+            }
+            else if (line.startsWith("common")) {
+                fontSheet.lineHeight = this.#getAttribute("lineHeight", line);
+                fontSheet.baseline = this.#getAttribute("base", line);
+                fontSheet.width = this.#getAttribute("scaleW", line);
+                fontSheet.height = this.#getAttribute("scaleH", line);
+            }
+            else if (line.startsWith("char")) {
+                let character = new FontCharacter(fontSheet.width, fontSheet.height, this.#getAttribute("id", line), this.#getAttribute("x", line), this.#getAttribute("y", line), this.#getAttribute("width", line), this.#getAttribute("height", line), this.#getAttribute("xoffset", line), this.#getAttribute("yoffset", line), this.#getAttribute("xadvance", line));
+                fontSheet.characters.set(character.asciiValue, character);
+            }
+        }
+        return fontSheet;
+    }
+    static #getAttribute(name, line) {
+        return Number.parseInt(line.match("lineHeight=(\w)")?.[1] ?? "0");
+    }
+}

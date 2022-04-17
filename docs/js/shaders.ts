@@ -1,4 +1,4 @@
-class RenderableSpriteShader extends CriterionShaderProgram<CriterionRenderBatch> {
+class BatchRendererShader extends CriterionShader<CriterionRenderBatch> {
     #maxBufferSize:number;
     #vbo:WebGLBuffer;
 
@@ -8,6 +8,12 @@ class RenderableSpriteShader extends CriterionShaderProgram<CriterionRenderBatch
         this.#vbo = vbo;
     }
 
+    get maxBufferSize():number {
+        return this.#maxBufferSize;
+    }
+    get maxTextures():number {
+        return BatchRendererShader.maxTextures;
+    }
     static get maxTextures():number {
         return 8;
     }
@@ -38,19 +44,7 @@ class RenderableSpriteShader extends CriterionShaderProgram<CriterionRenderBatch
         return "colors";
     }
 
-    prepare(scene:CriterionScene):CriterionRenderBatch[] {
-        var renderBatcher = new CriterionRenderBatcher();
-        var blueprints = this.#getRenderables(scene);
-        for(let blueprint of blueprints) {
-            let renderable:CriterionRenderBatchEntity = {
-                vertices: blueprint.transformedVertices(),
-                textureCoordinates: blueprint.transformedTextureCoordinates(),
-                color: blueprint.sprite.color,
-                texture: blueprint.sprite.spriteSheet?.texture ?? blueprint.sprite.texture,
-                layer: blueprint.transform.position.z,
-            }
-            renderBatcher.buffer(renderable);
-        }
+    prepare(scene:CriterionScene):void {
         let camera = this.#getCamera(scene);
 
         let mm = scene.engine.memoryManager;
@@ -58,32 +52,30 @@ class RenderableSpriteShader extends CriterionShaderProgram<CriterionRenderBatch
         mm.bindBufferArray(this.#vbo);
         for(let attribute of this.attributes.values())
             mm.enableAttribute(attribute);
-        mm.setUniform(this.uniforms.get(RenderableSpriteShader.viewUniform), camera.camera.view);
-        mm.setUniform(this.uniforms.get(RenderableSpriteShader.projectionUniform), camera.camera.projection);
-
-        return renderBatcher.batch(this.#maxBufferSize, RenderableSpriteShader.maxTextures);
+        mm.setUniform(this.uniforms.get(BatchRendererShader.viewUniform), camera.camera.view);
+        mm.setUniform(this.uniforms.get(BatchRendererShader.projectionUniform), camera.camera.projection);
     }
 
-    render(scene:CriterionScene, entity: CriterionRenderBatch) {
+    render(scene:CriterionScene, batch: CriterionRenderBatch) {
         let mm = scene.engine.memoryManager;
         //Load the textures
-        for(let i = 0; i < entity.textures.length; i++)
+        for(let i = 0; i < batch.textures.length; i++)
         {
             //Turn textures on in shader
-            mm.setUniform(this.uniforms.get(`${RenderableSpriteShader.projectionUniform}[${i}]`), i, "integer");
+            mm.setUniform(this.uniforms.get(`${BatchRendererShader.projectionUniform}[${i}]`), i, "integer");
             //Activates the texture in open fl
-            mm.useTexture(CriterionShaderProgram.indexToTextureId(scene.engine, i));
+            mm.useTexture(CriterionShader.indexToTextureId(scene.engine, i));
             //Sets the texture
-            mm.bindTexture(entity.textures[i]);
+            mm.bindTexture(batch.textures[i]);
         }
         //Load the colors
-        for(let i = 0; i < entity.colors.length; i++)
+        for(let i = 0; i < batch.colors.length; i++)
         {
-            mm.setUniform(this.uniforms.get(`${RenderableSpriteShader.colorsUniform}[${i}]`), entity.colors[i]);
+            mm.setUniform(this.uniforms.get(`${BatchRendererShader.colorsUniform}[${i}]`), batch.colors[i]);
         }
         //Load the data and draw
-        mm.bufferArray(new Float32Array(entity.buffer), "dynamic", 0);
-        scene.engine.window.renderTriangles(entity.verticesCount);
+        mm.bufferArray(new Float32Array(batch.buffer), "dynamic", 0);
+        scene.engine.window.renderTriangles(batch.verticesCount);
     }
 
     cleanup(scene:CriterionScene): void {
@@ -166,20 +158,20 @@ class RenderableSpriteShader extends CriterionShaderProgram<CriterionRenderBatch
                     outColor = getSampleFromArray(textures, int(textureIndex), textureCoordinates);
             }`;
         let attributes:Map<string, number> = new Map();
-        attributes.set(RenderableSpriteShader.positionAttribute, 0);
-        attributes.set(RenderableSpriteShader.textureCoordinatesAttribute, 1);
-        attributes.set(RenderableSpriteShader.textureAttribute, 2);
-        attributes.set(RenderableSpriteShader.colorAttribute, 3);
-        let uniforms = [RenderableSpriteShader.viewUniform, RenderableSpriteShader.projectionUniform];
+        attributes.set(BatchRendererShader.positionAttribute, 0);
+        attributes.set(BatchRendererShader.textureCoordinatesAttribute, 1);
+        attributes.set(BatchRendererShader.textureAttribute, 2);
+        attributes.set(BatchRendererShader.colorAttribute, 3);
+        let uniforms = [BatchRendererShader.viewUniform, BatchRendererShader.projectionUniform];
         for(let i = 0; i < this.maxTextures; i++)
         {
-            uniforms.push(`${RenderableSpriteShader.texturesUniform}[${i}]`);
-            uniforms.push(`${RenderableSpriteShader.colorsUniform}[${i}]`);
+            uniforms.push(`${BatchRendererShader.texturesUniform}[${i}]`);
+            uniforms.push(`${BatchRendererShader.colorsUniform}[${i}]`);
         }
         let shader = engine.memoryManager.createShaderProgram(vertexShaderSource, fragmentShaderSource, attributes, uniforms);
         let maxBufferSize = CriterionRenderBatcher.totalBytesPerVertex* 3 * 1000;
         let vbo = this.createBuffer(engine, maxBufferSize);
-        return new RenderableSpriteShader(maxBufferSize, vbo, shader);
+        return new BatchRendererShader(maxBufferSize, vbo, shader);
     }
 
     static createBuffer(engine:CriterionEngine, maxBufferSize:number):WebGLBuffer {

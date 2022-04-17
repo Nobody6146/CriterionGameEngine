@@ -9,8 +9,10 @@ class TestScene extends CriterionScene {
         this.registerComponent(AnimatorComponent);
         this.registerComponent(NavigatorComponent);
         this.registerComponent(PatrollerComponent);
+        this.registerComponent(FontComponent);
+        this.registerComponent(TextComponent);
         //create our shader
-        let shaderProgram = RenderableSpriteShader.create(this.engine);
+        let shaderProgram = BatchRendererShader.create(this.engine);
         this.engine.resourceManager.add(shaderProgram);
         //Generate our mesh
         let mesh = CriterionMeshUtils.squareMesh();
@@ -22,11 +24,14 @@ class TestScene extends CriterionScene {
         let spriteSheet = new SpriteSheet(texture.texture, texture.image.width, texture.image.height, 32, 32);
         this.engine.resourceManager.add(spriteSheet, "player");
         //Add systems
+        this.addSystem(ReadTestSytemEvents);
         this.addSystem(CameraSystem);
         this.addSystem(AnimatorSystem);
         this.addSystem(PatrolSystem);
-        this.addSystem(SpriteRendererSystem);
+        this.addSystem(SpriteBatcherSystem);
+        this.addSystem(BatchRendererSystem);
         this.addSystem(EntityCleanupSystem);
+        this.addSystem(EventSystem);
         //Create camera
         let camera = CameraBluePrint.create(this);
         //Create player
@@ -46,7 +51,14 @@ class TestScene extends CriterionScene {
         player2.sprite.setColor(new Vector4f([1, 0, 0, 1]));
         player2.entity.add(CleanupComponent);
         //Make the player delete itself after 5 seconds
-        player2.animator.animate(new AnimationSequence(0, 0, 5, [CleanupComponent], 1));
+        let keyframes = new Map();
+        keyframes.set(0, {
+            animate(entity) {
+                console.log("animation began!");
+                entity.scene.system(EventSystem).raise(TestEvent1, new TestEvent1());
+            }
+        });
+        player2.animator.animate(new AnimationSequence(0, 0, 5, [CleanupComponent], 1, keyframes));
     }
     cleanup() {
     }

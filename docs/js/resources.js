@@ -39,19 +39,29 @@ class AnimationSequence {
     endFrame;
     frameDuration;
     animatableComponents;
+    keyframes;
     //The frame to go to when animation stops/finishes
     finishedFrame;
     //How many times to repeat
     iterations;
     //Whether or not the animation can be interupted
     interruptible;
-    constructor(startFrame, endFrame, frameDuration, animatableComponents = [], iterations = -1, interruptible = true, finishedFrame = null) {
+    constructor(startFrame, endFrame, frameDuration, animatableComponents = [], iterations = -1, keyframes, interruptible = true, finishedFrame = null) {
         this.startFrame = startFrame;
         this.endFrame = endFrame;
         this.frameDuration = frameDuration;
         this.animatableComponents = animatableComponents;
+        this.keyframes = keyframes ?? new Map();
         this.iterations = iterations;
         this.interruptible = interruptible;
         this.finishedFrame = finishedFrame;
+    }
+}
+class FontStyle {
+    texture;
+    fontSheet;
+    constructor(texture, fontSheet) {
+        this.texture = texture;
+        this.fontSheet = fontSheet;
     }
 }

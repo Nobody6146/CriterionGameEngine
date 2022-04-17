@@ -338,6 +338,7 @@ abstract class CriterionEngine
     options: CriterionEngineOptions;
 
     #lastFrame:number = null;
+    #frameStart:number = null;
     #deltaTime:number = null;
     #running:boolean = false;
 
@@ -443,7 +444,8 @@ abstract class CriterionEngine
 
     abstract init(): Promise<boolean>;
 
-    #update(timestamp) {
+    #update(timestamp:number) {
+        this.#frameStart = timestamp;
         this.#deltaTime = (timestamp - this.#lastFrame) / 1000;
         this.#lastFrame = timestamp;
     
@@ -461,10 +463,13 @@ abstract class CriterionEngine
         }
     }
 
+    get frameStart() {
+        return this.#frameStart;
+    }
     get deltaTime() {
         return this.#deltaTime;
     }
-    frameRate = function() {
+    get frameRate() {
         return 1 / this.#deltaTime;
     }
 }
@@ -1286,7 +1291,7 @@ class CriterionRenderBatcher {
     }
 }
 
-abstract class CriterionShaderProgram<T> {
+abstract class CriterionShader<T> {
     #program:WebGLProgram;
     #uniforms:Map<string,WebGLUniformLocation>;
     #attributes:Map<string, number>;
@@ -1307,15 +1312,15 @@ abstract class CriterionShaderProgram<T> {
         return this.#attributes;
     }
 
-    abstract prepare(scene:CriterionScene):T[];
-    abstract render(scene:CriterionScene, entity:T);
+    abstract prepare(scene:CriterionScene):void;
+    abstract render(scene:CriterionScene, batch:T);
     abstract cleanup(scene:CriterionScene):void;
 
-    run(scene:CriterionScene) {
+    run(scene:CriterionScene, batches:T[]) {
         scene.engine.memoryManager.startShaderProgram(this.#program);
         let entities = this.prepare(scene);
-        for(let entity of entities) {
-            this.render(scene, entity);
+        for(let batch of batches) {
+            this.render(scene, batch);
         }
         this.cleanup(scene);
         scene.engine.memoryManager.stopShaderProgram();

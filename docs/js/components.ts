@@ -180,11 +180,46 @@ class AnimatorComponent implements CriterionComponent {
             this.frame = this.animation.endFrame;
         else
             this.frame = frame;
-        this.deltaTime = 0;
+        this.deltaTime = -1;
     }
 
     clearTime() {
-        this.deltaTime = 0;
+        this.deltaTime = -1;
+    }
+}
+
+class FontComponent implements CriterionComponent {
+    
+    fontStyle:FontStyle;
+    // bold:boolean;
+    // italic:boolean;
+    // size:number;
+    // color:Vector4f;
+
+    constructor() {
+        this.fontStyle = null;
+    }
+}
+
+class TextComponent implements CriterionComponent {
+    string:string;
+    leftPaddig:number;
+    rightPadding:number;
+    topPadding:number;
+    bottomPadding:number;
+    lineSpacing:number;
+    horizontalAlignment:HorizontalAlignment;
+    verticalAlignment:VeriticalAlignment;
+
+    constructor() {
+        this.string = null;
+        this.leftPaddig = 0;
+        this.rightPadding = 0;
+        this.topPadding = 0;
+        this.bottomPadding = 0;
+        this.lineSpacing = 0;
+        this.horizontalAlignment = "left";
+        this.verticalAlignment = "top";
     }
 }
 
