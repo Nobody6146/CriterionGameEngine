@@ -40,18 +40,21 @@ class TestScene extends CriterionScene {
         this.addSystem(EventSystem);
         //Create camera
         let camera = CameraBluePrint.create(this);
+        camera.camera.projection = Matrix4f.orthographic(0, 100, 100, 0, -1, 1);
         //Create player
         let player = PlayerBlueprint.create(this);
         player.animator = new AnimatorComponent();
         let animation = new AnimationSequence(0, 3, .75, [SpriteComponent]);
         player.animator.animate(animation);
         let patroller = CriterionBlueprint.createEntity(player.entity, PatrolLocationBlueprint);
-        patroller.patrol(.5, [
-            new Vector3f([-.5, -.5, 0]),
-            new Vector3f([-.5, .5, 0]),
-            new Vector3f([.5, .5, 0]),
-            new Vector3f([.5, -.5, 0])
+        patroller.patrol(50, [
+            new Vector3f([25, 25, 0]),
+            new Vector3f([25, 50, 0]),
+            new Vector3f([50, 50, 0]),
+            new Vector3f([50, 25, 0])
         ]);
+        player.transform.scale = new Vector3f([50, 50, 50]);
+        //player.sprite.setColor(new Vector4f([1,1,1,1]));
         let player2 = PlayerBlueprint.create(this);
         player2.transform.position.x += .25;
         player2.sprite.setColor(new Vector4f([1, 0, 0, 1]));
@@ -64,10 +67,14 @@ class TestScene extends CriterionScene {
                 entity.scene.system(EventSystem).raise(TestEvent1, new TestEvent1());
             }
         });
+        player2.transform.scale = new Vector3f([50, 50, 50]);
+        player2.transform.position = new Vector3f([50, 50, 0]);
         player2.animator.animate(new AnimationSequence(0, 0, 5, [CleanupComponent], 1, keyframes));
-        // let texbox = RenderableTextBlueprint.create(this);
-        // texbox.entity.add(SpriteComponent);
-        // texbox.text.string = "Hi";
+        let textbox = RenderableTextBlueprint.create(this);
+        //texbox.entity.add(SpriteComponent);
+        textbox.transform.scale = new Vector3f([50, 50, 50]);
+        textbox.transform.position = new Vector3f([50, 50, 0]);
+        textbox.text.string = "Hi";
     }
     cleanup() {
     }

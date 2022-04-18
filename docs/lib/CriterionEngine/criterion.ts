@@ -1007,14 +1007,21 @@ class CriterionMemmoryManager
     stopShaderProgram() {
         return this.startShaderProgram(null);
     }
-    setUniform(uniformLocation:WebGLUniformLocation, data:number | Vector2f | Vector3f | Vector4f | Matrix3f | Matrix4f, uniformDataType: "integer" | "float" = "float") {
+    setUniform(uniformLocation:WebGLUniformLocation, data:number | Vector2f | Vector3f | Vector4f | Matrix3f | Matrix4f | number[], uniformDataType: "integer" | "float" = "float") {
         if(typeof data === 'number')
         {
             if(uniformDataType === "float")
                 this.#engine.gl.uniform1f(uniformLocation, data);
             else
                 this.#engine.gl.uniform1i(uniformLocation, data);
-        }  
+        } 
+        else if(Array.isArray(data) && typeof data?.[0] === 'number')
+        {
+            if(uniformDataType === "float")
+                this.#engine.gl.uniform1fv(uniformLocation, data);
+            else
+                this.#engine.gl.uniform1iv(uniformLocation, data);
+        }
         else if(data instanceof Vector2f)
         {
             if(uniformDataType === "float")
@@ -1328,7 +1335,7 @@ abstract class CriterionShader<T> {
 
     static indexToTextureId(engine:CriterionEngine, index:number):number {
         return index === 0 || index > 32
-            ? engine.gl.TEXTURE0 + index : engine.gl.TEXTURE0;
+            ? engine.gl.TEXTURE0 : engine.gl.TEXTURE0 + index;
     }
 }
 

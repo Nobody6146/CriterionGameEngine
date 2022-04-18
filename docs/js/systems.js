@@ -75,7 +75,7 @@ class CameraSystem extends CriterionSystem {
     }
     update(deltaTime) {
         let camera = this.getCamera();
-        camera.camera.view = Matrix4f.viewMatrix(camera.transform.position, camera.transform.scale);
+        camera.camera.view = Matrix4f.viewMatrix(camera.transform.position, camera.transform.rotation);
     }
     getCamera() {
         return CriterionBlueprint.blueprints(this.scene, CameraBluePrint)[0];

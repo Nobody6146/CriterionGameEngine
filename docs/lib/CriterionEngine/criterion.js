@@ -844,6 +844,12 @@ class CriterionMemmoryManager {
             else
                 this.#engine.gl.uniform1i(uniformLocation, data);
         }
+        else if (Array.isArray(data) && typeof data?.[0] === 'number') {
+            if (uniformDataType === "float")
+                this.#engine.gl.uniform1fv(uniformLocation, data);
+            else
+                this.#engine.gl.uniform1iv(uniformLocation, data);
+        }
         else if (data instanceof Vector2f) {
             if (uniformDataType === "float")
                 this.#engine.gl.uniform2fv(uniformLocation, data.array);
@@ -1105,7 +1111,7 @@ class CriterionShader {
     }
     static indexToTextureId(engine, index) {
         return index === 0 || index > 32
-            ? engine.gl.TEXTURE0 + index : engine.gl.TEXTURE0;
+            ? engine.gl.TEXTURE0 : engine.gl.TEXTURE0 + index;
     }
 }
 class CriterionKeyboardKeys {

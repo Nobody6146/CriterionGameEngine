@@ -59,20 +59,15 @@ class BatchRendererShader extends CriterionShader<CriterionRenderBatch> {
     render(scene:CriterionScene, batch: CriterionRenderBatch) {
         let mm = scene.engine.memoryManager;
         //Load the textures
+        //mm.setUniform(this.uniforms.get(BatchRendererShader.texturesUniform), [0,1,2,3], "integer");
         for(let i = 0; i < batch.textures.length; i++)
         {
-            //Turn textures on in shader
-            mm.setUniform(this.uniforms.get(`${BatchRendererShader.projectionUniform}[${i}]`), i, "integer");
-            //Activates the texture in open fl
             mm.useTexture(CriterionShader.indexToTextureId(scene.engine, i));
-            //Sets the texture
             mm.bindTexture(batch.textures[i]);
         }
         //Load the colors
         for(let i = 0; i < batch.colors.length; i++)
-        {
             mm.setUniform(this.uniforms.get(`${BatchRendererShader.colorsUniform}[${i}]`), batch.colors[i]);
-        }
         //Load the data and draw
         mm.bufferArray(new Float32Array(batch.buffer), "dynamic", 0);
         scene.engine.window.renderTriangles(batch.verticesCount);
@@ -94,7 +89,7 @@ class BatchRendererShader extends CriterionShader<CriterionRenderBatch> {
         return CriterionBlueprint.blueprints(scene, RenderableSpriteBlueprint);
     }
 
-    static create(engine:CriterionEngine) {
+    static create(engine:CriterionEngine):BatchRendererShader {
         const vertexShaderSource = `#version 300 es
             in vec3 position;
             in vec2 uvCoordinates;
@@ -115,8 +110,15 @@ class BatchRendererShader extends CriterionShader<CriterionRenderBatch> {
                 textureIndex = textureId;
                 colorIndex = colorId;
             }`;
+
+            let textureText = "";
+            for(let i = 0; i < BatchRendererShader.maxTextures; i++)
+                textureText += `case ${i}:
+                return texture(textures[${i}], uv);
+                `;
+
             const fragmentShaderSource = `#version 300 es
-            #define numTextures 8
+            #define numTextures ${BatchRendererShader.maxTextures}
             precision mediump float;
 
             in vec2 textureCoordinates;
@@ -130,22 +132,7 @@ class BatchRendererShader extends CriterionShader<CriterionRenderBatch> {
 
             vec4 getSampleFromArray(sampler2D textures[numTextures], int i, vec2 uv) {
                 switch(i) {
-                    case 0:
-                        return texture(textures[0], uv);
-                    case 1:
-                        return texture(textures[0], uv);
-                    case 2:
-                        return texture(textures[0], uv);
-                    case 3:
-                        return texture(textures[0], uv);
-                    case 4:
-                        return texture(textures[0], uv);
-                    case 5:
-                        return texture(textures[0], uv);
-                    case 6:
-                        return texture(textures[0], uv);
-                    case 7:
-                        return texture(textures[0], uv);
+                    ${textureText}
                 }
             }
 
@@ -168,10 +155,18 @@ class BatchRendererShader extends CriterionShader<CriterionRenderBatch> {
             uniforms.push(`${BatchRendererShader.texturesUniform}[${i}]`);
             uniforms.push(`${BatchRendererShader.colorsUniform}[${i}]`);
         }
-        let shader = engine.memoryManager.createShaderProgram(vertexShaderSource, fragmentShaderSource, attributes, uniforms);
+        let shaderResult = engine.memoryManager.createShaderProgram(vertexShaderSource, fragmentShaderSource, attributes, uniforms);
         let maxBufferSize = CriterionRenderBatcher.totalBytesPerVertex* 3 * 1000;
         let vbo = this.createBuffer(engine, maxBufferSize);
-        return new BatchRendererShader(maxBufferSize, vbo, shader);
+        let shader = new BatchRendererShader(maxBufferSize, vbo, shaderResult);
+
+        //Enable the textures for the shader
+        engine.memoryManager.startShaderProgram(shaderResult.shaderProgram);
+        for(let i = 0; i < this.maxTextures; i++)
+            engine.memoryManager.setUniform(shaderResult.uniformLocations.get(`${BatchRendererShader.texturesUniform}[${i}]`), i, "integer");        
+        engine.memoryManager.stopShaderProgram();
+
+        return shader
     }
 
     static createBuffer(engine:CriterionEngine, maxBufferSize:number):WebGLBuffer {

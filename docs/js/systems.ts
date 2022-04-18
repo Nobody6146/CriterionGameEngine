@@ -93,7 +93,7 @@ class CameraSystem extends CriterionSystem {
 
     update(deltaTime: number): void {
         let camera = this.getCamera();
-        camera.camera.view = Matrix4f.viewMatrix(camera.transform.position, camera.transform.scale);
+        camera.camera.view = Matrix4f.viewMatrix(camera.transform.position, camera.transform.rotation);
     }
 
     getCamera(){
