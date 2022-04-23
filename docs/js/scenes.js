@@ -74,7 +74,14 @@ class TestScene extends CriterionScene {
         //texbox.entity.add(SpriteComponent);
         textbox.transform.scale = new Vector3f([50, 50, 50]);
         textbox.transform.position = new Vector3f([50, 50, 0]);
-        textbox.text.string = "Hi";
+        textbox.text.string = "Hello";
+        patroller = CriterionBlueprint.createEntity(textbox.entity, PatrolLocationBlueprint);
+        patroller.patrol(50, [
+            new Vector3f([25, 25, 0]),
+            new Vector3f([25, 50, 0]),
+            new Vector3f([50, 50, 0]),
+            new Vector3f([50, 25, 0])
+        ]);
     }
     cleanup() {
     }

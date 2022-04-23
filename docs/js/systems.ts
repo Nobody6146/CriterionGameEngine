@@ -185,7 +185,7 @@ class TextBatcher extends CriterionSystem {
                 width: blueprint.transform.scale.x,
                 height: blueprint.transform.scale.y
             };
-            let transformation = blueprint.transform.transformation;
+            let transformation = Matrix4f.transformation(blueprint.transform.position, blueprint.transform.rotation, new Vector3f([fontSheet.fontSize, fontSheet.fontSize, fontSheet.fontSize]));
             let lines:{chars:FontCharacter[], width:number;}[] = this.#formatIntoLines(blueprint.text.string, size, fontSheet);
 
             switch(blueprint.text.verticalAlignment)
@@ -225,12 +225,14 @@ class TextBatcher extends CriterionSystem {
                 
                 for(let c of chars)
                 {
+                    
                     let position = new Vector3f([cursor.x + c.lineOffset.x, cursor.y + c.lineOffset.y - fontSheet.baseline, 0]);
                     //Queue the data
+                    //console.log("ascii ", String.fromCharCode(c.asciiValue), " ", position.array);
                     for(let vertex of squareMesh.vertices)
                         blueprint.mesh.vertices.push(vertex.transform(transformation).add(position));
                     for(let uv of squareMesh.uvs)
-                        blueprint.mesh.textureCoordinates.push(new Vector2f([c.frameStart.x + c.width * uv.x, c.frameStart.y + c.height * uv.y]));
+                        blueprint.mesh.textureCoordinates.push(new Vector2f([c.frameStart.x + c.frameSize.x * uv.x, c.frameStart.y + c.frameSize.y * uv.y]));
                     blueprint.mesh.normals = squareMesh.normals;
 
                     cursor.x += c.lineAdvance;
@@ -247,6 +249,8 @@ class TextBatcher extends CriterionSystem {
                 layer: blueprint.renderer.layer,
             });
         }
+
+        //this.scene.engine.terminate();
 	}
 		
 	#formatIntoLines(text:string, size:{width:number, height:number}, fontSheet:FontSheet): {chars:FontCharacter[], width:number;}[]

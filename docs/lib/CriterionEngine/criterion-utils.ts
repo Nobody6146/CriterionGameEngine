@@ -206,20 +206,24 @@ class FontCharacter {
     asciiValue:number;
     lineOffset:Vector2f;
 	lineAdvance:number;
-	frameStart:Vector2f;
     width:number;
     height:number;
+
+    frameStart:Vector2f;
+    frameSize:Vector2f;
     frameEnd:Vector2f;
 	
 	constructor(sheetWidth:number, sheetHeight:number, asciiValue:number, x:number, y:number, width:number, height:number, xoffset:number, yoffset:number, lineAdvance:number)
 	{
 		this.asciiValue = asciiValue;
-		this.lineOffset = new Vector2f([xoffset/sheetWidth, yoffset/sheetHeight]);
-        this.lineAdvance = lineAdvance / sheetWidth;
+		this.lineOffset = new Vector2f([xoffset, yoffset]);
+        this.lineAdvance = lineAdvance;
+        this.width = width;
+        this.height = height;
+
         this.frameStart = new Vector2f([x/sheetWidth, y/sheetHeight]);
-        this.width = width/sheetWidth;
-        this.height = height/sheetHeight;
-        this.frameEnd = new Vector2f([(x + width)/sheetWidth, (y + height)/sheetHeight]);
+        this.frameSize = new Vector2f([width/sheetWidth, height/sheetHeight]);
+        this.frameEnd = new Vector2f([this.frameStart.x + this.frameSize.x, this.frameStart.y + this.frameSize.y]);
 	}
 }
 
@@ -239,8 +243,8 @@ class CriterionFontUtils {
             else if(line.startsWith("common ")) {
                 fontSheet.width = this.#getAttribute("scaleW", line);
                 fontSheet.height = this.#getAttribute("scaleH", line);
-                fontSheet.lineHeight = this.#getAttribute("lineHeight", line) / fontSheet.width;
-                fontSheet.baseline = this.#getAttribute("base", line) / fontSheet.width;
+                fontSheet.lineHeight = this.#getAttribute("lineHeight", line);
+                fontSheet.baseline = this.#getAttribute("base", line);
             }
             else if(line.startsWith("char "))
             {

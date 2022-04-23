@@ -187,18 +187,20 @@ class FontCharacter {
     asciiValue;
     lineOffset;
     lineAdvance;
-    frameStart;
     width;
     height;
+    frameStart;
+    frameSize;
     frameEnd;
     constructor(sheetWidth, sheetHeight, asciiValue, x, y, width, height, xoffset, yoffset, lineAdvance) {
         this.asciiValue = asciiValue;
-        this.lineOffset = new Vector2f([xoffset / sheetWidth, yoffset / sheetHeight]);
-        this.lineAdvance = lineAdvance / sheetWidth;
+        this.lineOffset = new Vector2f([xoffset, yoffset]);
+        this.lineAdvance = lineAdvance;
+        this.width = width;
+        this.height = height;
         this.frameStart = new Vector2f([x / sheetWidth, y / sheetHeight]);
-        this.width = width / sheetWidth;
-        this.height = height / sheetHeight;
-        this.frameEnd = new Vector2f([(x + width) / sheetWidth, (y + height) / sheetHeight]);
+        this.frameSize = new Vector2f([width / sheetWidth, height / sheetHeight]);
+        this.frameEnd = new Vector2f([this.frameStart.x + this.frameSize.x, this.frameStart.y + this.frameSize.y]);
     }
 }
 class CriterionFontUtils {
@@ -213,8 +215,8 @@ class CriterionFontUtils {
             else if (line.startsWith("common ")) {
                 fontSheet.width = this.#getAttribute("scaleW", line);
                 fontSheet.height = this.#getAttribute("scaleH", line);
-                fontSheet.lineHeight = this.#getAttribute("lineHeight", line) / fontSheet.width;
-                fontSheet.baseline = this.#getAttribute("base", line) / fontSheet.width;
+                fontSheet.lineHeight = this.#getAttribute("lineHeight", line);
+                fontSheet.baseline = this.#getAttribute("base", line);
             }
             else if (line.startsWith("char ")) {
                 let character = new FontCharacter(fontSheet.width, fontSheet.height, this.#getAttribute("id", line), this.#getAttribute("x", line), this.#getAttribute("y", line), this.#getAttribute("width", line), this.#getAttribute("height", line), this.#getAttribute("xoffset", line), this.#getAttribute("yoffset", line), this.#getAttribute("xadvance", line));
