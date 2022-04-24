@@ -43,8 +43,6 @@ class RenderableTextBlueprint extends CriterionBlueprint {
         super(entity);
     }
     #intialize(engine) {
-        this.transform.scale.array.set([.5, .5, .5]);
-        this.mesh.set(CriterionMeshUtils.squareMesh());
         this.renderer.layer = 2;
         this.font.fontStyle = engine.resourceManager.get(FontStyle, "monospaced");
         return this;

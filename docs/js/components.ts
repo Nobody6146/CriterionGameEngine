@@ -214,6 +214,8 @@ class TextComponent implements CriterionComponent {
     // topPadding:number;
     // bottomPadding:number;
     // lineSpacing:number;
+    width:number;
+    height:number;
     horizontalAlignment:HorizontalAlignment;
     verticalAlignment:VeriticalAlignment;
 
@@ -224,6 +226,8 @@ class TextComponent implements CriterionComponent {
         // this.topPadding = 0;
         // this.bottomPadding = 0;
         // this.lineSpacing = 0;
+        this.width = 1;
+        this.height = 1;
         this.horizontalAlignment = "left";
         this.verticalAlignment = "top";
     }

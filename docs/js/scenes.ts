@@ -22,7 +22,7 @@ class TestScene extends CriterionScene
         this.engine.resourceManager.add(new Mesh(mesh.vertices, mesh.uvs, mesh.normals), "player");
 
         //Load our texture
-        let texture = await CriterionTextureUtils.loadTexture(this.engine, "resources/images/tile.png");
+        let texture = await CriterionTextureUtils.loadTexture(this.engine, "resources/images/tile.png", "linear");
         this.engine.resourceManager.add(texture.texture, "player");
 
         //Load the spriteshet
@@ -31,7 +31,7 @@ class TestScene extends CriterionScene
 
         //load font
         let fontSheet = await CriterionFontUtils.loadFont("resources/fonts/monospaced.fnt")
-        let fontTexture = await CriterionTextureUtils.loadTexture(this.engine, "resources/images/monospaced.png");
+        let fontTexture = await CriterionTextureUtils.loadTexture(this.engine, "resources/images/monospaced.png", "linear");
         this.engine.resourceManager.add(fontTexture.texture, "monospaced");
         this.engine.resourceManager.add(new FontStyle(fontTexture.texture, fontSheet), "monospaced");
 
@@ -83,16 +83,18 @@ class TestScene extends CriterionScene
 
         let textbox = RenderableTextBlueprint.create(this);
         //texbox.entity.add(SpriteComponent);
-        textbox.transform.scale = new Vector3f([50, 50,50]);
-        textbox.transform.position = new Vector3f([50,50,0]);
-        textbox.text.string = "Hello";
-        patroller = CriterionBlueprint.createEntity(textbox.entity, PatrolLocationBlueprint);
-        patroller.patrol(50, [ 
-            new Vector3f([25, 25, 0]),
-            new Vector3f([25, 50, 0]),
-            new Vector3f([50, 50, 0]),
-            new Vector3f([50, 25, 0])
-        ]);
+        //textbox.transform.scale = new Vector3f([50, 50,50]);
+        //textbox.transform.position = new Vector3f([50,50,0]);
+        textbox.text.string = "Hello world";
+        textbox.text.width = 100;
+        textbox.text.height = 100;
+        // patroller = CriterionBlueprint.createEntity(textbox.entity, PatrolLocationBlueprint);
+        // patroller.patrol(50, [ 
+        //     new Vector3f([25, 25, 0]),
+        //     new Vector3f([25, 50, 0]),
+        //     new Vector3f([50, 50, 0]),
+        //     new Vector3f([50, 25, 0])
+        // ]);
     }
 
     cleanup() {

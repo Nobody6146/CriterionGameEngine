@@ -134,7 +134,7 @@ class TextBatcher extends CriterionSystem {
     }
     update(deltaTime) {
         let blueprints = this.#getRenderables();
-        let squareMesh = CriterionMeshUtils.squareMesh();
+        let squareMesh = CriterionMeshUtils.fontCharacterMesh();
         let batchRenderer = this.scene.system(BatchRendererSystem);
         for (let blueprint of blueprints) {
             blueprint.mesh.clear();
@@ -144,10 +144,10 @@ class TextBatcher extends CriterionSystem {
             let startHeight = 0;
             let fontSheet = blueprint.font.fontStyle.fontSheet;
             let size = {
-                width: blueprint.transform.scale.x,
-                height: blueprint.transform.scale.y
+                width: blueprint.text.width,
+                height: blueprint.text.height
             };
-            let transformation = Matrix4f.transformation(blueprint.transform.position, blueprint.transform.rotation, new Vector3f([fontSheet.fontSize, fontSheet.fontSize, fontSheet.fontSize]));
+            let transformation = blueprint.transform.transformation;
             let lines = this.#formatIntoLines(blueprint.text.string, size, fontSheet);
             switch (blueprint.text.verticalAlignment) {
                 case "center":
@@ -181,7 +181,7 @@ class TextBatcher extends CriterionSystem {
                     //Queue the data
                     //console.log("ascii ", String.fromCharCode(c.asciiValue), " ", position.array);
                     for (let vertex of squareMesh.vertices)
-                        blueprint.mesh.vertices.push(vertex.transform(transformation).add(position));
+                        blueprint.mesh.vertices.push(new Vector3f([vertex.x * c.width, vertex.y * c.height, vertex.z]).transform(transformation).add(position));
                     for (let uv of squareMesh.uvs)
                         blueprint.mesh.textureCoordinates.push(new Vector2f([c.frameStart.x + c.frameSize.x * uv.x, c.frameStart.y + c.frameSize.y * uv.y]));
                     blueprint.mesh.normals = squareMesh.normals;
@@ -228,6 +228,7 @@ class TextBatcher extends CriterionSystem {
                 break;
             lineChars.push(fontC);
             lineWidth += fontC.lineAdvance;
+            cursor.x += fontC.lineAdvance;
         }
         //Read the last character, so add the last line
         if (lineWidth > 0)

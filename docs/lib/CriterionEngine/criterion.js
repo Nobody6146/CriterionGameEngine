@@ -963,10 +963,11 @@ class CriterionMemmoryManager {
     useTexture(index) {
         this.#engine.gl.activeTexture(index);
     }
-    bufferTexture(level, width, height, image) {
+    bufferTexture(level, width, height, image, aliasing) {
         let border = 0;
         //@ts-ignore
         this.#engine.gl.texImage2D(this.#engine.gl.TEXTURE_2D, level, this.#engine.gl.RGBA, width, height, border, this.#engine.gl.RGBA, this.#engine.gl.UNSIGNED_BYTE, image);
+        let renderLevel = aliasing === "nearest" ? this.#engine.gl.NEAREST : this.#engine.gl.LINEAR;
         const isPowerOf2 = function isPowerOf2(value) {
             return (value & (value - 1)) == 0;
         };
@@ -982,8 +983,9 @@ class CriterionMemmoryManager {
             // wrapping to clamp to edge
             this.#engine.gl.texParameteri(this.#engine.gl.TEXTURE_2D, this.#engine.gl.TEXTURE_WRAP_S, this.#engine.gl.CLAMP_TO_EDGE);
             this.#engine.gl.texParameteri(this.#engine.gl.TEXTURE_2D, this.#engine.gl.TEXTURE_WRAP_T, this.#engine.gl.CLAMP_TO_EDGE);
-            this.#engine.gl.texParameteri(this.#engine.gl.TEXTURE_2D, this.#engine.gl.TEXTURE_MIN_FILTER, this.#engine.gl.LINEAR);
         }
+        if (aliasing)
+            this.#engine.gl.texParameteri(this.#engine.gl.TEXTURE_2D, this.#engine.gl.TEXTURE_MIN_FILTER, renderLevel);
     }
 }
 class CriterionRenderBatch {

@@ -119,6 +119,34 @@ class CriterionMeshUtils {
             ],
         };
     }
+    static fontCharacterMesh() {
+        return {
+            vertices: [
+                new Vector3f([0, 1, 0]),
+                new Vector3f([0, 0, 0]),
+                new Vector3f([1, 0, 0]),
+                new Vector3f([1, 0, 0]),
+                new Vector3f([1, 1, 0]),
+                new Vector3f([0, 1, 0])
+            ],
+            uvs: [
+                new Vector2f([0, 1,]),
+                new Vector2f([0, 0,]),
+                new Vector2f([1, 0,]),
+                new Vector2f([1, 0,]),
+                new Vector2f([1, 1,]),
+                new Vector2f([0, 1])
+            ],
+            normals: [
+                new Vector3f([0, 0, 1]),
+                new Vector3f([0, 0, 1]),
+                new Vector3f([0, 0, 1]),
+                new Vector3f([0, 0, 1]),
+                new Vector3f([0, 0, 1]),
+                new Vector3f([0, 0, 1]),
+            ],
+        };
+    }
 }
 class CriterionModelUtils {
     static buildModel(engine, attributes) {
@@ -151,11 +179,11 @@ class CriterionTextureUtils {
             image.src = url;
         });
     }
-    static async loadTexture(engine, url) {
+    static async loadTexture(engine, url, aliasing) {
         let texture = engine.memoryManager.createTexture();
         engine.memoryManager.bindTexture(texture);
         let image = await CriterionTextureUtils.loadImage(url);
-        engine.memoryManager.bufferTexture(0, image.width, image.height, image);
+        engine.memoryManager.bufferTexture(0, image.width, image.height, image, aliasing);
         engine.memoryManager.unbindTexture();
         return {
             image,

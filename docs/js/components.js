@@ -175,6 +175,8 @@ class TextComponent {
     // topPadding:number;
     // bottomPadding:number;
     // lineSpacing:number;
+    width;
+    height;
     horizontalAlignment;
     verticalAlignment;
     constructor() {
@@ -184,6 +186,8 @@ class TextComponent {
         // this.topPadding = 0;
         // this.bottomPadding = 0;
         // this.lineSpacing = 0;
+        this.width = 1;
+        this.height = 1;
         this.horizontalAlignment = "left";
         this.verticalAlignment = "top";
     }
