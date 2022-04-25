@@ -36,6 +36,7 @@ class TestScene extends CriterionScene
         this.engine.resourceManager.add(new FontStyle(fontTexture.texture, fontSheet), "monospaced");
 
         //Add systems
+        this.addSystem(WindowResizerSystem);
         this.addSystem(ReadTestSytemEvents);
         this.addSystem(CameraSystem);
         this.addSystem(AnimatorSystem);

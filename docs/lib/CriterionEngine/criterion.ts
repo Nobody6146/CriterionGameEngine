@@ -88,11 +88,13 @@ class CriterionWindow {
         this.#engine.gl.clearColor(0, 0, 0, 1);
         //this.depthTest();
         //this.cullFace();
+        let resolution = this.#engine.options.renderResolution;
+        this.renderResolution = resolution;
+        this.displayResolution = resolution;
+        this.viewport = new Vector4f([0,0,this.renderResolution.width, this.renderResolution.height]);
         this.#engine.logger.engine("window initialized");
     }
-    get resolution() {
-        return new Vector2f([this.#engine.canvas.width, this.#engine.canvas.height]);
-    }
+    
     clear() {
         this.#engine.gl.viewport(0, 0, this.#engine.canvas.width, this.#engine.canvas.height);
         this.#engine.gl.clear(this.#engine.gl.COLOR_BUFFER_BIT | this.#engine.gl.DEPTH_BUFFER_BIT);
@@ -130,6 +132,32 @@ class CriterionWindow {
         }
         else
             this.#engine.gl.disable(this.#engine.gl.CULL_FACE);
+    }
+
+    get renderResolution() {
+        return new Vector2f([this.#engine.canvas.width, this.#engine.canvas.height]);
+    }
+    set renderResolution(resolution:Vector2f) {
+        this.#engine.canvas.width = resolution.width;
+        this.#engine.canvas.height = resolution.height;
+    }
+    get displayResolution() {
+        return new Vector2f([Math.floor(this.#engine.canvas.width), Math.floor(this.#engine.canvas.height)]);
+    }
+    set displayResolution(resolution:Vector2f) {
+        //@ts-ignore
+        this.#engine.canvas.setAttribute("width", resolution.width);
+        //@ts-ignore
+        this.#engine.canvas.setAttribute("height", resolution.height);
+    }
+    get viewport() {
+        return new Vector4f(this.#engine.gl.getParameter(this.#engine.gl.VIEWPORT));
+    }
+    set viewport(resolution:Vector4f) {
+        this.#engine.gl.viewport(resolution.x, resolution.y, resolution.width, resolution.height);
+    }
+    get pageResolution() {
+        return new Vector2f([window.innerWidth, window.innerHeight]);
     }
 
     renderTriangles(verticesCount:number) {

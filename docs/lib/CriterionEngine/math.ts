@@ -35,6 +35,18 @@ class Vector2f {
     set y(value:number) {
         this.#array[1] = value;
     }
+    get width() {
+        return this.#array[0];
+    }
+    set width(value:number) {
+        this.#array[0] = value;
+    }
+    get height() {
+        return this.#array[1];
+    }
+    set height(value:number) {
+        this.#array[1] = value;
+    }
     magnitudeSquared(): number {
         return this.x * this.x + this.y * this.y;
     }
@@ -59,6 +71,12 @@ class Vector2f {
     }
     divide(scalar:number): Vector2f{
         return this.scale(1 / scalar);
+    }
+    equals(vector:Vector2f):boolean {
+        for(let i = 0; i < this.#array.length; i++)
+            if(this.#array[i] !== vector.array[i])
+                return false;
+        return true;
     }
 }
 
@@ -121,6 +139,12 @@ class Vector3f {
     transform(transformation:Matrix4f): Vector3f {
         return new Vector3f(transformation.multiplyVector(new Vector4f([...this.array, 1])).array);
     }
+    equals(vector:Vector3f):boolean {
+        for(let i = 0; i < this.#array.length; i++)
+            if(this.#array[i] !== vector.array[i])
+                return false;
+        return true;
+    }
 }
 
 //Vector4f==================
@@ -159,6 +183,18 @@ class Vector4f {
         return this.#array[3];
     }
     set w(value:number) {
+        this.#array[3] = value;
+    }  
+    get width() {
+        return this.#array[2];
+    }
+    set width(value:number) {
+        this.#array[2] = value;
+    }
+    get height() {
+        return this.#array[3];
+    }
+    set height(value:number) {
         this.#array[3] = value;
     }
     get r() {

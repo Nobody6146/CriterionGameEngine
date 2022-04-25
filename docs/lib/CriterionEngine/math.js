@@ -29,6 +29,18 @@ class Vector2f {
     set y(value) {
         this.#array[1] = value;
     }
+    get width() {
+        return this.#array[0];
+    }
+    set width(value) {
+        this.#array[0] = value;
+    }
+    get height() {
+        return this.#array[1];
+    }
+    set height(value) {
+        this.#array[1] = value;
+    }
     magnitudeSquared() {
         return this.x * this.x + this.y * this.y;
     }
@@ -53,6 +65,12 @@ class Vector2f {
     }
     divide(scalar) {
         return this.scale(1 / scalar);
+    }
+    equals(vector) {
+        for (let i = 0; i < this.#array.length; i++)
+            if (this.#array[i] !== vector.array[i])
+                return false;
+        return true;
     }
 }
 class Vector3f {
@@ -111,6 +129,12 @@ class Vector3f {
     transform(transformation) {
         return new Vector3f(transformation.multiplyVector(new Vector4f([...this.array, 1])).array);
     }
+    equals(vector) {
+        for (let i = 0; i < this.#array.length; i++)
+            if (this.#array[i] !== vector.array[i])
+                return false;
+        return true;
+    }
 }
 //Vector4f==================
 class Vector4f {
@@ -145,6 +169,18 @@ class Vector4f {
         return this.#array[3];
     }
     set w(value) {
+        this.#array[3] = value;
+    }
+    get width() {
+        return this.#array[2];
+    }
+    set width(value) {
+        this.#array[2] = value;
+    }
+    get height() {
+        return this.#array[3];
+    }
+    set height(value) {
         this.#array[3] = value;
     }
     get r() {

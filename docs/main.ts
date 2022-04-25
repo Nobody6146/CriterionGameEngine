@@ -5,9 +5,10 @@
 
 try{
     let options = new CriterionEngineOptions();
+    options.renderResolution = new Vector2f([480, 360]);
     options.debugMode = true;
     options.logLevel = 'engine';
-    let game = new CrawlerGame(options);
+    let game = new TurnDeadGame(options);
     game.launch();
 }
 catch(error)

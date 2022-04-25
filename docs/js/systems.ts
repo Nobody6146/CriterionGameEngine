@@ -1,3 +1,29 @@
+class WindowResizerSystem extends CriterionSystem {
+
+    static fullscreen = false;
+
+    constructor(scene:CriterionScene) {
+        super(scene);
+    }
+
+    update(deltaTime: number): void {
+        let window = this.scene.engine.window;
+        let pageResolution = window.pageResolution;
+        let renderResolution = window.renderResolution;
+        let displayResolution = window.displayResolution;
+        let viewport = window.viewport;
+        if(WindowResizerSystem.fullscreen && !pageResolution.equals(displayResolution))
+        {
+            window.displayResolution = pageResolution;
+            displayResolution = pageResolution;
+        }
+        if(!renderResolution.equals(displayResolution))
+            window.renderResolution = displayResolution;
+        if(viewport.width != renderResolution.width || viewport.height != renderResolution.height)
+            window.viewport = new Vector4f([0,0,renderResolution.width, renderResolution.height]);
+    }
+}
+
 class EntityCleanupSystem extends CriterionSystem {
     constructor(scene:CriterionScene) {
         super(scene);
