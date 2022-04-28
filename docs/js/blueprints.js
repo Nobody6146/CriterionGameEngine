@@ -81,7 +81,8 @@ class CameraBluePrint extends CriterionBlueprint {
     }
     #initialize() {
         this.transform.scale.y = -1;
-        this.camera.projection = Matrix4f.orthographic(-1, 1, 1, -1, -1, 1);
+        let resolution = this.entity.scene.engine.window.renderResolution;
+        this.camera.projection = Matrix4f.orthographic(0, resolution.width, resolution.height, 0, -1, 1);
         return this;
     }
     requiredComponents() {

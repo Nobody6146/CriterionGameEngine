@@ -1,3 +1,6 @@
+class ResourceNames {
+    static TILE_SPRITE_SHEET = "tiles";
+}
 class SpriteSheet {
     texture;
     width;
@@ -25,10 +28,12 @@ class SpriteSheet {
     }
 }
 class Mesh {
+    indices;
     vertices;
     uvs;
     normals;
-    constructor(vertices = [], uvs = [], normals = []) {
+    constructor(indices, vertices = [], uvs = [], normals = []) {
+        this.indices = indices;
         this.vertices = vertices;
         this.uvs = uvs;
         this.normals = normals;

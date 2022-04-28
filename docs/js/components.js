@@ -37,10 +37,12 @@ class CameraComponent {
     }
 }
 class MeshComponent {
+    indices;
     vertices;
     textureCoordinates;
     normals;
     constructor() {
+        this.indices = [];
         this.vertices = [];
         this.textureCoordinates = [];
         this.normals = [];
@@ -51,6 +53,7 @@ class MeshComponent {
         this.normals = [];
     }
     set(mesh) {
+        this.indices = mesh.indices;
         this.vertices = mesh.vertices;
         this.textureCoordinates = mesh.uvs;
         this.normals = mesh.normals;

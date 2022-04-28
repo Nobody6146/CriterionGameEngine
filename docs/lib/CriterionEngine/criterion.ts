@@ -77,6 +77,7 @@ class CriterionEngineOptions
 }
 
 type CriterionEngineLogLevel = 'engine' | 'debug' | 'info' | 'warning' | 'error' | 'none';
+type CriterionDrawMode = "triangles";
 //===================
 class CriterionWindow {
     #engine: CriterionEngine;
@@ -160,8 +161,13 @@ class CriterionWindow {
         return new Vector2f([window.innerWidth, window.innerHeight]);
     }
 
-    renderTriangles(verticesCount:number) {
-        this.#engine.gl.drawArrays(this.#engine.gl.TRIANGLES, 0, verticesCount);
+    renderArrays(count:number, mode:CriterionDrawMode = "triangles") {
+        let drawMode = mode === "triangles" ? this.#engine.gl.TRIANGLES : this.#engine.gl.TRIANGLES;
+        this.#engine.gl.drawArrays(drawMode, 0, count);
+    }
+    renderElements(count:number, mode:CriterionDrawMode = "triangles") {
+        let drawMode = mode === "triangles" ? this.#engine.gl.TRIANGLES : this.#engine.gl.TRIANGLES;
+        this.#engine.gl.drawElements(drawMode, count, this.#engine.gl.UNSIGNED_SHORT, 0);
     }
 }
 class CriterionKeyboardKey {
@@ -385,7 +391,7 @@ abstract class CriterionEngine
             options = new CriterionEngineOptions();
         this.options = options;
         this.#canvas = document.querySelector(this.options.canvasSelector);
-        this.#gl = this.#canvas.getContext('webgl2');
+        this.#gl = this.#canvas.getContext('webgl2', {antialias: false});
         this.#deltaTime = 0;
 
         if(!this.isSupported)
@@ -988,8 +994,14 @@ class CriterionMemmoryManager
     bindBufferArray(vbo:WebGLBuffer): void {
         this.#engine.gl.bindBuffer(this.#engine.gl.ARRAY_BUFFER, vbo);
     }
+    bindElementsBufferArray(vbo:WebGLBuffer): void {
+        this.#engine.gl.bindBuffer(this.#engine.gl.ELEMENT_ARRAY_BUFFER, vbo);
+    }
     unbindBufferArray() {
         return this.bindBufferArray(null);
+    }
+    unbindElementsBufferArray() {
+        return this.bindElementsBufferArray(null);
     }
     bufferArray(data:Float32Array | Int32Array | number, mode:CriterionMemoryMode = "static", offset?:number) {
         let drawMode = mode === "static" ? this.#engine.gl.STATIC_DRAW : this.#engine.gl.DYNAMIC_DRAW;
@@ -1002,6 +1014,13 @@ class CriterionMemmoryManager
             else
                 this.#engine.gl.bufferSubData(this.#engine.gl.ARRAY_BUFFER, offset, data);
         }
+    }
+    bufferElements(data:Uint16Array | number, mode:CriterionMemoryMode = "static") {
+        let drawMode = mode === "static" ? this.#engine.gl.STATIC_DRAW : this.#engine.gl.DYNAMIC_DRAW;
+        if(typeof data === "number")
+            this.#engine.gl.bufferData(this.#engine.gl.ELEMENT_ARRAY_BUFFER, data, drawMode);    
+        else 
+            this.#engine.gl.bufferData(this.#engine.gl.ELEMENT_ARRAY_BUFFER, data, drawMode);    
     }
     setAttribute(type:CriterionMemoryType, index:number, dimension:number, normalize:boolean = false, stride:number = 0, offset:number = 0) {
         let dataType = type === "integer" ? this.#engine.gl.INT : this.#engine.gl.FLOAT;
@@ -1207,6 +1226,7 @@ class CriterionMemmoryManager
 interface CriterionRenderBatchEntity {
     vertices:Vector3f[];
     textureCoordinates:Vector2f[];
+    indicies:number[];
     color:Vector4f;
     texture:WebGLTexture;
     layer:number;
@@ -1214,18 +1234,25 @@ interface CriterionRenderBatchEntity {
 
 class CriterionRenderBatch {
     buffer:number[];
+    elementsBuffer:number[];
     textures:WebGLTexture[];
     colors:Vector4f[];
+    vertexCount:number;
+    elementCount:number;
 
     constructor() {
         this.buffer = [];
+        this.elementsBuffer = [];
         this.textures = [];
         this.colors = [];
+        this.vertexCount = 0;
+        this.elementCount = 0;
     }
 
-    get verticesCount() {
-        return this.buffer.length / CriterionRenderBatcher.totalBytesPerVertex * 4;
-    }
+    // get verticesCount() {
+    //     return this.elementsBuffer.length;
+    //     //return this.buffer.length / CriterionRenderBatcher.totalBytesPerVertex * 4;
+    // }
 }
 
 class CriterionRenderBatcher {
@@ -1249,9 +1276,11 @@ class CriterionRenderBatcher {
         renderLayer.push(renderable);
     }
 
-    batch(maxBufferSize:number, maxTextures:number):CriterionRenderBatch[] {
+    batch(maxBufferSize:number, maxElementsBufferSize:number, maxTextures:number):CriterionRenderBatch[] {
         let batches = [new CriterionRenderBatch()];
         let batch = batches[0];
+
+        let maxIndices = CriterionRenderBatcher.maxUniqueIndices;
 
         //Batch in order of layers/priority
         let layerNumbers = [...this.#layers.keys()].sort((x, y) => x - y);
@@ -1260,8 +1289,11 @@ class CriterionRenderBatcher {
             let layer = this.#layers.get(layerNumber);
             for(let renderable of layer)
             {
-                let spaceNeeded = renderable.vertices.length * CriterionRenderBatcher.totalBytesPerVertex / 4;
-                if(batch.buffer.length + spaceNeeded > maxBufferSize)
+                let spaceNeeded = renderable.vertices.length * CriterionRenderBatcher.totalBytesPerVertex;
+                let elementsSpaceNeeded = renderable.indicies.length * CriterionRenderBatcher.numberOfIndexBytes;
+                if(batch.buffer.length * 4 + spaceNeeded > maxBufferSize //run out of vbo space
+                    || batch.elementsBuffer.length + elementsSpaceNeeded > maxElementsBufferSize //run out of elements space
+                    || batch.elementCount + renderable.vertices.length > maxIndices) //run out of possible unique element values
                 {
                     batch = new CriterionRenderBatch();
                     batches.push(batch);
@@ -1305,9 +1337,21 @@ class CriterionRenderBatcher {
                     batch.buffer.push(textureId);
                     batch.buffer.push(colorId);
                 }
+                for(let index of renderable.indicies)
+                    batch.elementsBuffer.push(batch.vertexCount + index);
+                batch.vertexCount += renderable.vertices.length;
+                batch.elementCount += renderable.indicies.length;
             }
         }
         return batches;
+    }
+
+    static get numberOfIndexBytes() {
+        return 2;
+    }
+
+    static get maxUniqueIndices() {
+        return Math.pow(2, 8 * this.numberOfIndexBytes);
     }
 
     static get totalBytesPerVertex() {

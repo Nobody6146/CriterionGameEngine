@@ -50,11 +50,13 @@ class CameraComponent implements CriterionComponent
 
 class MeshComponent implements CriterionComponent
 {
+    indices:number[];
     vertices:Vector3f[];
     textureCoordinates:Vector2f[];
     normals:Vector3f[];
 
     constructor() {
+        this.indices = [];
         this.vertices = [];
         this.textureCoordinates = [];
         this.normals = [];
@@ -67,6 +69,7 @@ class MeshComponent implements CriterionComponent
     }
 
     set(mesh:Mesh):this {
+        this.indices = mesh.indices;
         this.vertices = mesh.vertices;
         this.textureCoordinates = mesh.uvs;
         this.normals = mesh.normals;

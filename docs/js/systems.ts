@@ -138,7 +138,7 @@ class BatchRendererSystem extends CriterionSystem {
 
     update(deltaTime: number): void {
         let shader = this.scene.engine.resourceManager.get(BatchRendererShader);
-        let batches = this.renderBatcher.batch(shader.maxBufferSize, shader.maxTextures);
+        let batches = this.renderBatcher.batch(shader.maxBufferSize, shader.maxElemetsBufferSize, shader.maxTextures);
         shader.run(this.scene, batches);
         this.renderBatcher.clear();
     }
@@ -159,8 +159,16 @@ class SpriteBatcherSystem extends CriterionSystem {
 
         let blueprints = this.#getRenderables();
         for(let blueprint of blueprints) {
+            //Use the indices we have, otherwise generate them
+            let indices = (blueprint.mesh.indices?.length ?? 0) !== 0
+                ? blueprint.mesh.indices : [];
+            if(indices.length === 0){
+                for(let i = 0; i < blueprint.mesh.vertices.length; i++)
+                    indices.push(i);
+            }
             let renderable:CriterionRenderBatchEntity = {
                 vertices: blueprint.transformedVertices(),
+                indicies: indices,
                 textureCoordinates: blueprint.transformedTextureCoordinates(),
                 color: blueprint.sprite.color,
                 texture: blueprint.sprite.spriteSheet?.texture ?? blueprint.sprite.texture,
@@ -188,13 +196,17 @@ class SpriteBatcherSystem extends CriterionSystem {
 
 class TextBatcher extends CriterionSystem {
 
+    #squareMesh:{indices:number[], vertices:Vector3f[], uvs:Vector2f[], normals:Vector3f[] }
+
     constructor(scene:CriterionScene) {
         super(scene);
+
+        this.#squareMesh = CriterionMeshUtils.createSquare2DMesh();
     }
 
     update(deltaTime: number): void {
         let blueprints:RenderableTextBlueprint[] = this.#getRenderables();
-        let squareMesh = CriterionMeshUtils.fontCharacterMesh();
+        
         let batchRenderer = this.scene.system(BatchRendererSystem);
 
         for(let blueprint of blueprints)
@@ -229,6 +241,7 @@ class TextBatcher extends CriterionSystem {
             
             cursor.y += startHeight;
             
+            let characterCount = 0;
             for(let line of lines)
             {
                 let chars = line.chars;
@@ -251,16 +264,25 @@ class TextBatcher extends CriterionSystem {
                 
                 for(let c of chars)
                 {
-                    
                     let position = new Vector3f([cursor.x + c.lineOffset.x, cursor.y + c.lineOffset.y - fontSheet.baseline, 0]);
                     //Queue the data
                     //console.log("ascii ", String.fromCharCode(c.asciiValue), " ", position.array);
-                    for(let vertex of squareMesh.vertices)
+                    for(let i = 0; i < this.#squareMesh.vertices.length; i++)
+                    {
+                        let vertex = this.#squareMesh.vertices[i];
                         blueprint.mesh.vertices.push(new Vector3f([vertex.x * c.width, vertex.y * c.height, vertex.z]).transform(transformation).add(position));
-                    for(let uv of squareMesh.uvs)
+                        let uv = this.#squareMesh.uvs[i];
                         blueprint.mesh.textureCoordinates.push(new Vector2f([c.frameStart.x + c.frameSize.x * uv.x, c.frameStart.y + c.frameSize.y * uv.y]));
-                    blueprint.mesh.normals = squareMesh.normals;
-
+                        let normal = this.#squareMesh.normals[i];
+                        blueprint.mesh.normals.push(normal);
+                    }
+                    for(let i = 0; i < this.#squareMesh.indices.length; i++)
+                    {
+                        let index = this.#squareMesh.indices[i];
+                        blueprint.mesh.indices.push(characterCount*this.#squareMesh.vertices.length + index);
+                    }
+                    characterCount++;
+                    
                     cursor.x += c.lineAdvance;
                 }
                 
@@ -268,6 +290,7 @@ class TextBatcher extends CriterionSystem {
             }
             
             batchRenderer.renderBatcher.buffer({
+                indicies: blueprint.mesh.indices,
                 vertices: blueprint.mesh.vertices,
                 textureCoordinates: blueprint.mesh.textureCoordinates,
                 color: null,
@@ -453,5 +476,78 @@ class ReadTestSytemEvents extends CriterionSystem {
         let events = this.scene.system(EventSystem).events();
         for(let event of events)
             console.warn("We found an event", event);
+    }
+}
+
+class TileSystem extends CriterionSystem {
+
+    #tileMap:TileMap;
+    #spriteSheet:SpriteSheet;
+
+    constructor(scene:CriterionScene) {
+        super(scene);
+
+        this.#tileMap = new TileMap(2, 2, 1);
+        this.#spriteSheet = this.scene.engine.resourceManager.get(SpriteSheet, ResourceNames.TILE_SPRITE_SHEET);
+    }
+
+    update(deltaTime: number): void {
+        let batchRenderer = this.scene.system(BatchRendererSystem);
+
+        let mesh = CriterionMeshUtils.createSquare2DMesh();
+        let frame = this.#spriteSheet.getFrameCoordinates(0);
+
+        let transformation = Matrix4f.transformation(new Vector3f(), new Vector3f([1,1,1]), new Vector3f([Tile.SIZE.width, Tile.SIZE.height, 1]));
+
+        let i = 0;
+        let tiles = this.#tileMap.tiles;
+        for(let floor = 0; floor < tiles.length; floor++) {
+            for(let y = 0; y < tiles[floor].length; y++) {
+                for(let x = 0; x < tiles[floor][y].length; x++) {
+                    let cursor = new Vector3f([(x -y)*Tile.SIZE.width/2 + 64, (x + y)*Tile.SIZE.height/2 + 64, 0]);
+                    // let cursor:Vector3f;
+                    // switch(i++) {
+                    //     case 0:
+                    //         cursor = new Vector3f([32, 32, 0]);
+                    //         break;
+                    //     case 1:
+                    //         cursor = new Vector3f([48, 40, 0]);
+                    //         break;
+                    //     case 2:
+                    //         cursor = new Vector3f([64, 48, 0]);
+                    //         break;
+                    //     case 3:
+                    //         cursor = new Vector3f([60, 56, 0]);
+                    //         break;
+                    // }
+                    batchRenderer.buffer({
+                        indicies: mesh.indices,
+                        vertices: this.#transformVertices(mesh.vertices, transformation, cursor),
+                        textureCoordinates: this.#transformUvs(mesh.uvs, frame.start, frame.end),
+                        color: null,
+                        texture: this.#spriteSheet.texture,
+                        layer: -1,
+                    });
+                }
+            }
+        }
+    }
+
+    #transformVertices(vertices:Vector3f[], transformation:Matrix4f, position:Vector3f) {
+        
+        let result:Vector3f[] = [];
+        for(let vertex of vertices) {
+            result.push(vertex.transform(transformation).add(position));
+        }
+        return result;
+    }
+
+    #transformUvs(uvs:Vector2f[], start:Vector2f, end:Vector2f) {
+        let results:Vector2f[] = [];
+        let frameSize = new Vector2f([end.x - start.x, end.y - start.y])
+        for(let uv of uvs) {
+            results.push(new Vector2f([start.x + frameSize.x * uv.x, start.y + frameSize.y * uv.y]));
+        }
+        return results;
     }
 }

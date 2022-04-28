@@ -91,27 +91,22 @@ class CriterionShaderProgramUtils {
     }
 }
 class CriterionMeshUtils {
-    static squareMesh() {
+    static createSquare3DMesh() {
         return {
+            indices: [0, 1, 3, 3, 1, 2],
             vertices: [
                 new Vector3f([-0.5, 0.5, 0]),
                 new Vector3f([-0.5, -0.5, 0]),
                 new Vector3f([0.5, -0.5, 0]),
-                new Vector3f([0.5, -0.5, 0]),
                 new Vector3f([0.5, 0.5, 0]),
-                new Vector3f([-0.5, 0.5, 0])
             ],
             uvs: [
                 new Vector2f([0, 1,]),
                 new Vector2f([0, 0,]),
                 new Vector2f([1, 0,]),
-                new Vector2f([1, 0,]),
                 new Vector2f([1, 1,]),
-                new Vector2f([0, 1])
             ],
             normals: [
-                new Vector3f([0, 0, 1]),
-                new Vector3f([0, 0, 1]),
                 new Vector3f([0, 0, 1]),
                 new Vector3f([0, 0, 1]),
                 new Vector3f([0, 0, 1]),
@@ -119,27 +114,22 @@ class CriterionMeshUtils {
             ],
         };
     }
-    static fontCharacterMesh() {
+    static createSquare2DMesh() {
         return {
+            indices: [0, 1, 3, 3, 1, 2],
             vertices: [
                 new Vector3f([0, 1, 0]),
                 new Vector3f([0, 0, 0]),
                 new Vector3f([1, 0, 0]),
-                new Vector3f([1, 0, 0]),
                 new Vector3f([1, 1, 0]),
-                new Vector3f([0, 1, 0])
             ],
             uvs: [
                 new Vector2f([0, 1,]),
                 new Vector2f([0, 0,]),
                 new Vector2f([1, 0,]),
-                new Vector2f([1, 0,]),
                 new Vector2f([1, 1,]),
-                new Vector2f([0, 1])
             ],
             normals: [
-                new Vector3f([0, 0, 1]),
-                new Vector3f([0, 0, 1]),
                 new Vector3f([0, 0, 1]),
                 new Vector3f([0, 0, 1]),
                 new Vector3f([0, 0, 1]),
@@ -149,7 +139,7 @@ class CriterionMeshUtils {
     }
 }
 class CriterionModelUtils {
-    static buildModel(engine, attributes) {
+    static buildModel(engine, attributes, indices = []) {
         let memoryManager = engine.memoryManager;
         //Create model
         let vao = memoryManager.createArray();
@@ -163,7 +153,20 @@ class CriterionModelUtils {
         }
         memoryManager.unbindBufferArray();
         memoryManager.unbindArray();
-        return vao;
+        if (indices?.length > 0) {
+            let vbo = memoryManager.createBuffer();
+            memoryManager.bindElementsBufferArray(vbo);
+            memoryManager.bufferElements(new Uint16Array(indices));
+            memoryManager.unbindElementsBufferArray();
+            return {
+                vao,
+                indicesVbo: vbo
+            };
+        }
+        return {
+            vao,
+            indicesVbo: null
+        };
     }
 }
 class CriterionTextureUtils {

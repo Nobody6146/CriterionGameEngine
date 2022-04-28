@@ -18,16 +18,17 @@ class TestScene extends CriterionScene
         this.engine.resourceManager.add(shaderProgram);
 
         //Generate our mesh
-        let mesh = CriterionMeshUtils.squareMesh();
-        this.engine.resourceManager.add(new Mesh(mesh.vertices, mesh.uvs, mesh.normals), "player");
+        let mesh = CriterionMeshUtils.createSquare2DMesh();
+        this.engine.resourceManager.add(new Mesh(mesh.indices, mesh.vertices, mesh.uvs, mesh.normals), "player");
 
         //Load our texture
-        let texture = await CriterionTextureUtils.loadTexture(this.engine, "resources/images/tile.png", "linear");
+        let texture = await CriterionTextureUtils.loadTexture(this.engine, "resources/images/markers.png", "linear");
         this.engine.resourceManager.add(texture.texture, "player");
 
         //Load the spriteshet
-        let spriteSheet = new SpriteSheet(texture.texture, texture.image.width, texture.image.height, 32, 32);
+        let spriteSheet = new SpriteSheet(texture.texture, texture.image.width, texture.image.height, 64, 32);
         this.engine.resourceManager.add(spriteSheet, "player");
+        this.engine.resourceManager.add(spriteSheet, ResourceNames.TILE_SPRITE_SHEET);
 
         //load font
         let fontSheet = await CriterionFontUtils.loadFont("resources/fonts/monospaced.fnt")
@@ -43,13 +44,13 @@ class TestScene extends CriterionScene
         this.addSystem(PatrolSystem);
         this.addSystem(SpriteBatcherSystem);
         this.addSystem(TextBatcher);
+        this.addSystem(TileSystem);
         this.addSystem(BatchRendererSystem);
         this.addSystem(EntityCleanupSystem);
         this.addSystem(EventSystem);
 
         //Create camera
         let camera = CameraBluePrint.create(this);
-        camera.camera.projection = Matrix4f.orthographic(0, 100, 100, 0, -1, 1);
 
         //Create player
         let player = PlayerBlueprint.create(this);
@@ -89,13 +90,20 @@ class TestScene extends CriterionScene
         textbox.text.string = "Hello world";
         textbox.text.width = 100;
         textbox.text.height = 100;
-        // patroller = CriterionBlueprint.createEntity(textbox.entity, PatrolLocationBlueprint);
-        // patroller.patrol(50, [ 
-        //     new Vector3f([25, 25, 0]),
-        //     new Vector3f([25, 50, 0]),
-        //     new Vector3f([50, 50, 0]),
-        //     new Vector3f([50, 25, 0])
-        // ]);
+        patroller = CriterionBlueprint.createEntity(textbox.entity, PatrolLocationBlueprint);
+        patroller.patrol(50, [ 
+            new Vector3f([25, 25, 0]),
+            new Vector3f([25, 50, 0]),
+            new Vector3f([50, 50, 0]),
+            new Vector3f([50, 25, 0])
+        ]);
+
+        // for(let i = 0; i < 4; i++ ) {
+        //     let tile = PlayerBlueprint.create(this);
+        //     tile.transform.position = new Vector3f([32 + i*16, 32 + i*16, 0]);;
+        //     tile.transform.scale = new Vector3f([32,32,32]);
+        // }
+        
     }
 
     cleanup() {

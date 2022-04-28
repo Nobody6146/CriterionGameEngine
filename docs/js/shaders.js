@@ -1,13 +1,20 @@
 class BatchRendererShader extends CriterionShader {
     #maxBufferSize;
+    #maxElementsBufferSize;
     #vbo;
-    constructor(maxBufferSize, vbo, shaderResult) {
+    #elementsVbo;
+    constructor(maxBufferSize, maxElementsBufferSize, vbo, elementsVbo, shaderResult) {
         super(shaderResult.shaderProgram, shaderResult.uniformLocations, shaderResult.attributes);
         this.#maxBufferSize = maxBufferSize;
+        this.#maxElementsBufferSize = maxElementsBufferSize;
         this.#vbo = vbo;
+        this.#elementsVbo = elementsVbo;
     }
     get maxBufferSize() {
         return this.#maxBufferSize;
+    }
+    get maxElemetsBufferSize() {
+        return this.#maxElementsBufferSize;
     }
     get maxTextures() {
         return BatchRendererShader.maxTextures;
@@ -50,6 +57,7 @@ class BatchRendererShader extends CriterionShader {
         mm.bindBufferArray(this.#vbo);
         for (let attribute of this.attributes.values())
             mm.enableAttribute(attribute);
+        mm.bindElementsBufferArray(this.#elementsVbo);
         mm.setUniform(this.uniforms.get(BatchRendererShader.viewUniform), camera.camera.view);
         mm.setUniform(this.uniforms.get(BatchRendererShader.projectionUniform), camera.camera.projection);
     }
@@ -66,7 +74,9 @@ class BatchRendererShader extends CriterionShader {
             mm.setUniform(this.uniforms.get(`${BatchRendererShader.colorsUniform}[${i}]`), batch.colors[i]);
         //Load the data and draw
         mm.bufferArray(new Float32Array(batch.buffer), "dynamic", 0);
-        scene.engine.window.renderTriangles(batch.verticesCount);
+        mm.bufferElements(new Uint16Array(batch.elementsBuffer), "dynamic");
+        //scene.engine.window.renderArrays(batch.elementsBuffer.length);
+        scene.engine.window.renderElements(batch.elementCount);
     }
     cleanup(scene) {
         let mm = scene.engine.memoryManager;
@@ -74,12 +84,10 @@ class BatchRendererShader extends CriterionShader {
             mm.disableAttribute(attribute);
         scene.engine.window.enableAlphaBlending(false);
         mm.unbindBufferArray();
+        mm.unbindElementsBufferArray();
     }
     #getCamera(scene) {
         return CriterionBlueprint.blueprints(scene, CameraBluePrint)[0];
-    }
-    #getRenderables(scene) {
-        return CriterionBlueprint.blueprints(scene, RenderableSpriteBlueprint);
     }
     static create(engine) {
         const vertexShaderSource = `#version 300 es
@@ -145,9 +153,11 @@ class BatchRendererShader extends CriterionShader {
             uniforms.push(`${BatchRendererShader.colorsUniform}[${i}]`);
         }
         let shaderResult = engine.memoryManager.createShaderProgram(vertexShaderSource, fragmentShaderSource, attributes, uniforms);
-        let maxBufferSize = CriterionRenderBatcher.totalBytesPerVertex * 3 * 1000;
-        let vbo = this.createBuffer(engine, maxBufferSize);
-        let shader = new BatchRendererShader(maxBufferSize, vbo, shaderResult);
+        let maxBufferSize = CriterionRenderBatcher.totalBytesPerVertex * 3 * 10000; //1mb
+        let maxElementsBufferSize = 1000000; //1mb
+        let vbo = this.#createBuffer(engine, maxBufferSize);
+        let elementsVbo = this.#createElementsBuffer(engine, maxElementsBufferSize);
+        let shader = new BatchRendererShader(maxBufferSize, maxElementsBufferSize, vbo, elementsVbo, shaderResult);
         //Enable the textures for the shader
         engine.memoryManager.startShaderProgram(shaderResult.shaderProgram);
         for (let i = 0; i < this.maxTextures; i++)
@@ -155,7 +165,7 @@ class BatchRendererShader extends CriterionShader {
         engine.memoryManager.stopShaderProgram();
         return shader;
     }
-    static createBuffer(engine, maxBufferSize) {
+    static #createBuffer(engine, maxBufferSize) {
         let mm = engine.memoryManager;
         let vbo = mm.createBuffer();
         mm.bindBufferArray(vbo);
@@ -171,6 +181,14 @@ class BatchRendererShader extends CriterionShader {
         setAttribute(1, CriterionRenderBatcher.numberOfTextureIdBytes);
         setAttribute(1, CriterionRenderBatcher.numberOfColorIdBytes);
         mm.unbindArray();
+        return vbo;
+    }
+    static #createElementsBuffer(engine, maxBufferSize) {
+        let mm = engine.memoryManager;
+        let vbo = mm.createBuffer();
+        mm.bindElementsBufferArray(vbo);
+        mm.bufferElements(maxBufferSize, "dynamic");
+        mm.unbindElementsBufferArray();
         return vbo;
     }
 }

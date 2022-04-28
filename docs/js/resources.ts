@@ -1,3 +1,7 @@
+class ResourceNames {
+    static TILE_SPRITE_SHEET = "tiles";
+}
+
 interface SystemEvent {
     
 }
@@ -32,11 +36,13 @@ class SpriteSheet {
 }
 
 class Mesh {
+    indices:number[];
     vertices:Vector3f[];
     uvs:Vector2f[];
     normals:Vector3f[];
 
-    constructor(vertices:Vector3f[] = [], uvs:Vector2f[] = [], normals:Vector3f[] = []) {
+    constructor(indices:number[], vertices:Vector3f[] = [], uvs:Vector2f[] = [], normals:Vector3f[] = []) {
+        this.indices = indices;
         this.vertices = vertices;
         this.uvs = uvs;
         this.normals = normals;
