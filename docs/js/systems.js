@@ -1,5 +1,6 @@
 class WindowResizerSystem extends CriterionSystem {
     static fullscreen = false;
+    static sync = true;
     constructor(scene) {
         super(scene);
     }
@@ -13,6 +14,8 @@ class WindowResizerSystem extends CriterionSystem {
             window.displayResolution = pageResolution;
             displayResolution = pageResolution;
         }
+        if (!WindowResizerSystem.sync)
+            return;
         if (!renderResolution.equals(displayResolution))
             window.renderResolution = displayResolution;
         if (viewport.width != renderResolution.width || viewport.height != renderResolution.height)
@@ -148,15 +151,6 @@ class SpriteBatcherSystem extends CriterionSystem {
         return CriterionBlueprint.blueprints(this.scene, RenderableSpriteBlueprint);
     }
 }
-// class LineData
-// {
-//     chars:FontCharacter[];
-//     width:number;
-//     constructor(chars:FontCharacter[], width:number) {
-//         this.chars = chars;
-//         this.width = width;
-//     }
-// }
 class TextBatcher extends CriterionSystem {
     #squareMesh;
     constructor(scene) {
@@ -334,54 +328,12 @@ class AnimatorSystem extends CriterionSystem {
         return this.scene.entities([AnimatorComponent]);
     }
 }
-class PatrolSystem extends CriterionSystem {
-    constructor(scene) {
-        super(scene);
-    }
-    update(deltaTime) {
-        let navigations = this.#getNavigations();
-        for (let navigation of navigations) {
-            if (!navigation.navigator.navigating || (navigation.patroller.destinations?.length ?? 0) === 0)
-                continue;
-            //Determine how far we need to travel
-            let distance = navigation.navigator.destination.subtract(navigation.transform.position);
-            let translation = distance.normalize().scale(deltaTime * navigation.patroller.speed);
-            //Check if we've arrived at our destination
-            if (distance.magnitudeSquared() < navigation.patroller.tolerance || translation.magnitudeSquared() > distance.magnitudeSquared()) {
-                navigation.transform.position = navigation.navigator.destination;
-                //Go to the next waypoint
-                navigation.patroller.index = (++navigation.patroller.index) % navigation.patroller.destinations.length;
-                navigation.navigate();
-            }
-            else
-                navigation.transform.position = navigation.transform.position.add(translation);
-        }
-    }
-    #getNavigations() {
-        return CriterionBlueprint.blueprints(this.scene, PatrolLocationBlueprint);
-    }
-}
-//delte everything below here
-class TestEvent1 {
-}
-class TestEvent2 {
-}
-class ReadTestSytemEvents extends CriterionSystem {
-    constructor(scene) {
-        super(scene);
-    }
-    update(deltaTime) {
-        let events = this.scene.system(EventSystem).events();
-        for (let event of events)
-            console.warn("We found an event", event);
-    }
-}
 class TileSystem extends CriterionSystem {
     #tileMap;
     #spriteSheet;
     constructor(scene) {
         super(scene);
-        this.#tileMap = new TileMap(2, 2, 1);
+        this.#tileMap = new TileMap(20, 20, 1);
         this.#spriteSheet = this.scene.engine.resourceManager.get(SpriteSheet, ResourceNames.TILE_SPRITE_SHEET);
     }
     update(deltaTime) {
@@ -436,5 +388,18 @@ class TileSystem extends CriterionSystem {
             results.push(new Vector2f([start.x + frameSize.x * uv.x, start.y + frameSize.y * uv.y]));
         }
         return results;
+    }
+}
+class PlayerController extends CriterionSystem {
+    constructor(scene) {
+        super(scene);
+    }
+    update(deltaTime) {
+        let mouse = this.scene.engine.mouse;
+        let button = mouse.buttons.get(CriterionMouseButtons.buttonLeft);
+        if (button.newPress || button.up) {
+            console.log("mouse ", [...mouse.position.array]);
+            console.log("scaled ", [...mouse.scaledPosition.array]);
+        }
     }
 }

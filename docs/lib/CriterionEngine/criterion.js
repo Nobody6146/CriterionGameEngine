@@ -117,13 +117,13 @@ class CriterionWindow {
         this.#engine.canvas.height = resolution.height;
     }
     get displayResolution() {
-        return new Vector2f([Math.floor(this.#engine.canvas.width), Math.floor(this.#engine.canvas.height)]);
+        return new Vector2f([Math.floor(this.#engine.canvas.clientWidth), Math.floor(this.#engine.canvas.clientHeight)]);
     }
     set displayResolution(resolution) {
         //@ts-ignore
-        this.#engine.canvas.setAttribute("width", resolution.width);
+        this.#engine.canvas.style.width = resolution.width;
         //@ts-ignore
-        this.#engine.canvas.setAttribute("height", resolution.height);
+        this.#engine.canvas.style.height = resolution.height;
     }
     get viewport() {
         return new Vector4f(this.#engine.gl.getParameter(this.#engine.gl.VIEWPORT));
@@ -234,13 +234,13 @@ class CriterionMouseButton {
         this.newPress = false;
         this.timeStamp = null;
         switch (button) {
-            case 0:
+            case CriterionMouseButtons.buttonLeft:
                 this.display = "Left Click";
                 break;
-            case 1:
+            case CriterionMouseButtons.buttonMiddle:
                 this.display = "Middle Click";
                 break;
-            case 2:
+            case CriterionMouseButtons.buttonRight:
                 this.display = "Right Click";
                 break;
             default:
@@ -249,24 +249,24 @@ class CriterionMouseButton {
         }
     }
     get downTime() {
-        return performance.now() - this.timeStamp;
+        return this.down ? performance.now() - this.timeStamp : 0;
     }
 }
 class CriterionMouse {
     #engine;
     position;
+    scaledPosition;
     buttons;
     recentButton;
     constructor(engine) {
         this.#engine = engine;
         this.#engine.logger.engine("intitializing mouse");
-        this.position = {
-            x: null,
-            y: null
-        };
+        this.position = new Vector2f();
+        this.scaledPosition = new Vector2f();
         this.buttons = new Map();
-        for (let i = 0; i < 3; i++)
-            this.buttons.set(1, new CriterionMouseButton(this, i));
+        this.buttons.set(CriterionMouseButtons.buttonLeft, new CriterionMouseButton(this, CriterionMouseButtons.buttonLeft));
+        this.buttons.set(CriterionMouseButtons.buttonRight, new CriterionMouseButton(this, CriterionMouseButtons.buttonRight));
+        this.buttons.set(CriterionMouseButtons.buttonMiddle, new CriterionMouseButton(this, CriterionMouseButtons.buttonMiddle));
         this.recentButton = null;
         // Add the event listeners for mousedown, mousemove, and mouseu
         this.#engine.canvas.addEventListener("mousemove", this.#mouseUpdate.bind(this));
@@ -275,9 +275,16 @@ class CriterionMouse {
         this.#engine.logger.engine("mouse initialized");
     }
     #mouseUpdate(event) {
+        let canvas = this.#engine.canvas;
+        let rect = canvas.getBoundingClientRect();
+        this.position.x = Math.floor(event.clientX - rect.left);
+        this.position.y = Math.floor(event.clientY - rect.top);
+        this.scaledPosition.x = Math.floor((event.clientX - rect.left) * (canvas.width / rect.width));
+        this.scaledPosition.y = Math.floor((event.clientY - rect.top) * (canvas.height / rect.height));
         let button = this.buttons.get(event.button);
         if (button == null)
             return;
+        // console.log("we have a button", button, event);
         switch (event.type) {
             case 'mousedown':
                 if (!button.down)
@@ -285,11 +292,13 @@ class CriterionMouse {
                 button.down = true;
                 button.up = false;
                 button.timeStamp = performance.now();
+                break;
             case 'mouseup':
                 button.down = false;
                 button.up = true;
                 button.newPress = false;
                 button.timeStamp = null;
+                break;
         }
         this.recentButton = button;
     }
@@ -402,8 +411,6 @@ class CriterionEngine {
         this.#deltaTime = (timestamp - this.#lastFrame) / 1000;
         this.#lastFrame = timestamp;
         this.#window.clear();
-        this.#keyboard.update(this.#deltaTime);
-        this.#mouse.update(this.#deltaTime);
         //this.controllerManager.update(this.deltaTime);
         this.sceneManager.update(this.#deltaTime);
         if (this.#running)
@@ -412,6 +419,8 @@ class CriterionEngine {
             //this.memmoryManager.freeAll();
             this.#logger.engine("Game terminated");
         }
+        this.#keyboard.update(this.#deltaTime);
+        this.#mouse.update(this.#deltaTime);
     }
     get frameStart() {
         return this.#frameStart;
@@ -1284,7 +1293,7 @@ class CriterionKeyboardKeys {
     static tab = "Tab";
 }
 class CriterionMouseButtons {
-    static buttonLeft = 1;
-    static buttonMiddle = 2;
-    static buttonRight = 3;
+    static buttonLeft = 0;
+    static buttonMiddle = 1;
+    static buttonRight = 2;
 }
