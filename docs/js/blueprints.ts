@@ -90,7 +90,7 @@ class PlayerBlueprint extends RenderableSpriteBlueprint {
     }
 }
 
-class CameraBluePrint extends CriterionBlueprint
+class CameraBlueprint extends CriterionBlueprint
 {
     transform:TransformComponent;
     camera:CameraComponent;
@@ -110,7 +110,7 @@ class CameraBluePrint extends CriterionBlueprint
         return [TransformComponent, CameraComponent];
     }
 
-    static create(scene: CriterionScene): CameraBluePrint {
-        return CriterionBlueprint.createEntity(scene, CameraBluePrint).#initialize();
+    static create(scene: CriterionScene): CameraBlueprint {
+        return CriterionBlueprint.createEntity(scene, CameraBlueprint).#initialize();
     }
 }

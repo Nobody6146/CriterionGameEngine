@@ -87,7 +87,7 @@ class BatchRendererShader extends CriterionShader {
         mm.unbindElementsBufferArray();
     }
     #getCamera(scene) {
-        return CriterionBlueprint.blueprints(scene, CameraBluePrint)[0];
+        return CriterionBlueprint.blueprints(scene, CameraBlueprint)[0];
     }
     static create(engine) {
         const vertexShaderSource = `#version 300 es

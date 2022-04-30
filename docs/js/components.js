@@ -51,6 +51,7 @@ class MeshComponent {
         this.vertices = [];
         this.textureCoordinates = [];
         this.normals = [];
+        this.indices = [];
     }
     set(mesh) {
         this.indices = mesh.indices;

@@ -126,7 +126,7 @@ class CameraSystem extends CriterionSystem {
     }
 
     getCamera(){
-        return CriterionBlueprint.blueprints(this.scene, CameraBluePrint)[0];
+        return CriterionBlueprint.blueprints(this.scene, CameraBlueprint)[0];
     }
 }
 
@@ -289,6 +289,8 @@ class TextBatcher extends CriterionSystem {
                 texture: blueprint.font.fontStyle.texture,
                 layer: blueprint.renderer.layer,
             });
+
+            console.log(lines.reduce( (x,y) => x + y.chars.length, 0));
         }
 
         //this.scene.engine.terminate();
@@ -420,18 +422,19 @@ class TileSystem extends CriterionSystem {
 
     #tileMap:TileMap;
     #spriteSheet:SpriteSheet;
+    #mesh:{indices:number[], vertices:Vector3f[], uvs:Vector2f[], normals:Vector3f[] }
 
     constructor(scene:CriterionScene) {
         super(scene);
 
         this.#tileMap = new TileMap(20, 20, 1);
         this.#spriteSheet = this.scene.engine.resourceManager.get(SpriteSheet, ResourceNames.TILE_SPRITE_SHEET);
+        this.#mesh = CriterionMeshUtils.createSquare2DMesh();
     }
 
     update(deltaTime: number): void {
         let batchRenderer = this.scene.system(BatchRendererSystem);
 
-        let mesh = CriterionMeshUtils.createSquare2DMesh();
         let frame = this.#spriteSheet.getFrameCoordinates(0);
 
         let transformation = Matrix4f.transformation(new Vector3f(), new Vector3f([1,1,1]), new Vector3f([Tile.SIZE.width, Tile.SIZE.height, 1]));
@@ -441,7 +444,7 @@ class TileSystem extends CriterionSystem {
         for(let floor = 0; floor < tiles.length; floor++) {
             for(let y = 0; y < tiles[floor].length; y++) {
                 for(let x = 0; x < tiles[floor][y].length; x++) {
-                    let cursor = new Vector3f([(x -y)*Tile.SIZE.width/2 + 64, (x + y)*Tile.SIZE.height/2 + 64, 0]);
+                    let cursor = Tile.toScreen(new Vector2f([x, y]));
                     // let cursor:Vector3f;
                     // switch(i++) {
                     //     case 0:
@@ -458,9 +461,9 @@ class TileSystem extends CriterionSystem {
                     //         break;
                     // }
                     batchRenderer.buffer({
-                        indicies: mesh.indices,
-                        vertices: this.#transformVertices(mesh.vertices, transformation, cursor),
-                        textureCoordinates: this.#transformUvs(mesh.uvs, frame.start, frame.end),
+                        indicies: this.#mesh.indices,
+                        vertices: this.#transformVertices(this.#mesh.vertices, transformation, cursor),
+                        textureCoordinates: this.#transformUvs(this.#mesh.uvs, frame.start, frame.end),
                         color: null,
                         texture: this.#spriteSheet.texture,
                         layer: -1,
@@ -491,17 +494,30 @@ class TileSystem extends CriterionSystem {
 
 class PlayerController extends CriterionSystem {
 
+    #mouseDelta:number;
+    static SCROLL_THRESHOLD = 10;
+
     constructor(scene:CriterionScene) {
         super(scene);
+        this.#mouseDelta = 0;
     }
 
     update(deltaTime: number): void {
+        let cameraBlueprint = CriterionBlueprint.blueprints(this.scene, CameraBlueprint)[0];
         let mouse = this.scene.engine.mouse;
         let button = mouse.buttons.get(CriterionMouseButtons.buttonLeft);
-        if(button.newPress || button.up)
+        if(button.down)
         {
-            console.log("mouse ", [...mouse.position.array]);
-            console.log("scaled ", [...mouse.scaledPosition.array]);
+            let mouseDelta = mouse.deltaPosition;
+            this.#mouseDelta += Math.abs(mouseDelta.x) + Math.abs(mouseDelta.y);
+            
+            if(this.#mouseDelta > PlayerController.SCROLL_THRESHOLD)
+            {
+                cameraBlueprint.transform.position.x += mouseDelta.x;
+                cameraBlueprint.transform.position.y += mouseDelta.y;
+            }
         }
+        else
+            this.#mouseDelta = 0;
     }
 }

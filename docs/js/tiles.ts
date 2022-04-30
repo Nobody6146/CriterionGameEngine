@@ -6,6 +6,14 @@ class Tile {
     constructor() {
         
     }
+
+    toScreen(tilePosition:Vector2f) {
+        return Tile.toScreen(tilePosition);
+    }
+
+    static toScreen(tilePosition:Vector2f) {
+        return new Vector3f([(tilePosition.x - tilePosition.y)*Tile.SIZE.width/2, (tilePosition.x + tilePosition.y)*Tile.SIZE.height/2]);
+    }
 }
 
 type TileType = "empty" | "solid";
@@ -23,5 +31,9 @@ class TileMap {
                     this.tiles[floor][y][x] = 0;
             }
         }
+    }
+
+    cellPosition(mouse:Vector2f, screenPosition:Vector2f) {
+        return new Vector2f([Math.floor(mouse.x / Tile.SIZE.width), Math.floor(mouse.y / Tile.SIZE.height)]);
     }
 }

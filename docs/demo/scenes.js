@@ -41,7 +41,7 @@ class DemoTestScene extends CriterionScene {
         this.addSystem(EntityCleanupSystem);
         this.addSystem(EventSystem);
         //Create camera
-        let camera = CameraBluePrint.create(this);
+        let camera = CameraBlueprint.create(this);
         //Create player
         let player = PlayerBlueprint.create(this);
         player.animator = new AnimatorComponent();

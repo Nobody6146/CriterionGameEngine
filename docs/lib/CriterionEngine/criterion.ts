@@ -301,6 +301,7 @@ class CriterionMouse {
 
     position: Vector2f;
     scaledPosition:Vector2f;
+    #previousPosition:Vector2f;
     buttons: Map<number, CriterionMouseButton>;
     recentButton:CriterionMouseButton;
 
@@ -312,6 +313,7 @@ class CriterionMouse {
 
         this.position = new Vector2f();
         this.scaledPosition = new Vector2f();
+        this.#previousPosition = new Vector2f();
         this.buttons = new Map();
         this.buttons.set(CriterionMouseButtons.buttonLeft, new CriterionMouseButton(this, CriterionMouseButtons.buttonLeft));
         this.buttons.set(CriterionMouseButtons.buttonRight, new CriterionMouseButton(this, CriterionMouseButtons.buttonRight));
@@ -323,6 +325,10 @@ class CriterionMouse {
         this.#engine.canvas.addEventListener("mousedown", this.#mouseUpdate.bind(this));
         this.#engine.canvas.addEventListener("mouseup", this.#mouseUpdate.bind(this));
         this.#engine.logger.engine("mouse initialized");
+    }
+    
+    get deltaPosition():Vector2f {
+        return this.#previousPosition.subtract(this.position);
     }
 
     #mouseUpdate(event: MouseEvent) {
@@ -361,6 +367,8 @@ class CriterionMouse {
             button.newPress = false;
         }
         this.recentButton = null;
+        this.#previousPosition.x = this.scaledPosition.x;
+        this.#previousPosition.y = this.scaledPosition.y;
     }
 }
 
@@ -494,17 +502,19 @@ abstract class CriterionEngine
     
         this.#window.clear();
         
-        //this.controllerManager.update(this.deltaTime);
-        this.sceneManager.update(this.#deltaTime);
-        if(this.#running)
-            window.requestAnimationFrame(this.#update.bind(this));
-        else
-        {
-            //this.memmoryManager.freeAll();
-            this.#logger.engine("Game terminated");
+        try {
+            //this.controllerManager.update(this.deltaTime);
+            this.sceneManager.update(this.#deltaTime);
+            this.#keyboard.update(this.#deltaTime);
+            this.#mouse.update(this.#deltaTime);
+            if(this.#running)
+                window.requestAnimationFrame(this.#update.bind(this));
         }
-        this.#keyboard.update(this.#deltaTime);
-        this.#mouse.update(this.#deltaTime);
+        catch (error) {
+            console.error(error);
+            alert(`Criterion Crash Report: \n${error.message}`);
+        }
+        this.#logger.engine("Game terminated");
     }
 
     get frameStart() {
@@ -808,6 +818,23 @@ abstract class CriterionScene {
             system = new type(this);
             this.#systems.set(type, system);
             return system;
+        }
+    }
+    removeSystem<Type extends CriterionSystem>(system:Type | (new (scene:CriterionScene) => Type)): Type {
+        if(system == null)
+        {
+            this.#engine.logger.warn("System is empty");
+            return undefined;
+        }
+        
+        if(system instanceof CriterionSystem)
+        {
+            let type = system.constructor as new (scene:CriterionScene) => Type;
+            this.#systems.delete(type);
+        }
+        else
+        {
+            this.#systems.delete(system);
         }
     }
 
@@ -1412,7 +1439,7 @@ abstract class CriterionShader<T> {
 
     run(scene:CriterionScene, batches:T[]) {
         scene.engine.memoryManager.startShaderProgram(this.#program);
-        let entities = this.prepare(scene);
+        this.prepare(scene);
         for(let batch of batches) {
             this.render(scene, batch);
         }

@@ -66,6 +66,7 @@ class MeshComponent implements CriterionComponent
         this.vertices = [];
         this.textureCoordinates = [];
         this.normals = [];
+        this.indices = [];
     }
 
     set(mesh:Mesh):this {

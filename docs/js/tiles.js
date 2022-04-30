@@ -3,6 +3,12 @@ class Tile {
     static SIZE = new Vector2f([64, 32]);
     constructor() {
     }
+    toScreen(tilePosition) {
+        return Tile.toScreen(tilePosition);
+    }
+    static toScreen(tilePosition) {
+        return new Vector3f([(tilePosition.x - tilePosition.y) * Tile.SIZE.width / 2, (tilePosition.x + tilePosition.y) * Tile.SIZE.height / 2]);
+    }
 }
 class TileMap {
     tiles;
@@ -16,5 +22,8 @@ class TileMap {
                     this.tiles[floor][y][x] = 0;
             }
         }
+    }
+    cellPosition(mouse, screenPosition) {
+        return new Vector2f([Math.floor(mouse.x / Tile.SIZE.width), Math.floor(mouse.y / Tile.SIZE.height)]);
     }
 }

@@ -73,7 +73,7 @@ class PlayerBlueprint extends RenderableSpriteBlueprint {
         return PlayerBlueprint.createEntity(scene, PlayerBlueprint).#intialize(scene.engine);
     }
 }
-class CameraBluePrint extends CriterionBlueprint {
+class CameraBlueprint extends CriterionBlueprint {
     transform;
     camera;
     constructor(entity) {
@@ -89,6 +89,6 @@ class CameraBluePrint extends CriterionBlueprint {
         return [TransformComponent, CameraComponent];
     }
     static create(scene) {
-        return CriterionBlueprint.createEntity(scene, CameraBluePrint).#initialize();
+        return CriterionBlueprint.createEntity(scene, CameraBlueprint).#initialize();
     }
 }

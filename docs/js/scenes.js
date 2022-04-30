@@ -39,12 +39,12 @@ class TestScene extends CriterionScene {
         this.addSystem(EntityCleanupSystem);
         this.addSystem(EventSystem);
         //Create camera
-        let camera = CameraBluePrint.create(this);
+        let camera = CameraBlueprint.create(this);
         let textbox = RenderableTextBlueprint.create(this);
         //texbox.entity.add(SpriteComponent);
         //textbox.transform.scale = new Vector3f([50, 50,50]);
         //textbox.transform.position = new Vector3f([50,50,0]);
-        textbox.text.string = "Hello world";
+        textbox.text.string = "Hello world because there is a boy here doing his best";
         textbox.text.width = 100;
         textbox.text.height = 100;
         // for(let i = 0; i < 4; i++ ) {

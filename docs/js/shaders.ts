@@ -92,8 +92,8 @@ class BatchRendererShader extends CriterionShader<CriterionRenderBatch> {
         mm.unbindElementsBufferArray();
     }
 
-    #getCamera(scene:CriterionScene):CameraBluePrint {
-        return CriterionBlueprint.blueprints(scene, CameraBluePrint)[0];
+    #getCamera(scene:CriterionScene):CameraBlueprint {
+        return CriterionBlueprint.blueprints(scene, CameraBlueprint)[0];
     }
 
     static create(engine:CriterionEngine):BatchRendererShader {
