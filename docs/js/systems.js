@@ -1,6 +1,6 @@
 class WindowResizerSystem extends CriterionSystem {
     static fullscreen = false;
-    static sync = true;
+    static sync = false;
     constructor(scene) {
         super(scene);
     }
@@ -230,7 +230,6 @@ class TextBatcher extends CriterionSystem {
                 texture: blueprint.font.fontStyle.texture,
                 layer: blueprint.renderer.layer,
             });
-            console.log(lines.reduce((x, y) => x + y.chars.length, 0));
         }
         //this.scene.engine.terminate();
     }
@@ -348,7 +347,8 @@ class TileSystem extends CriterionSystem {
         for (let floor = 0; floor < tiles.length; floor++) {
             for (let y = 0; y < tiles[floor].length; y++) {
                 for (let x = 0; x < tiles[floor][y].length; x++) {
-                    let cursor = Tile.toScreen(new Vector2f([x, y]));
+                    i++;
+                    let cursor = Tile.screenPosition(new Vector2f([x, y]));
                     // let cursor:Vector3f;
                     // switch(i++) {
                     //     case 0:
@@ -366,7 +366,7 @@ class TileSystem extends CriterionSystem {
                     // }
                     batchRenderer.buffer({
                         indicies: this.#mesh.indices,
-                        vertices: this.#transformVertices(this.#mesh.vertices, transformation, cursor),
+                        vertices: this.#transformVertices(this.#mesh.vertices, transformation, new Vector3f(cursor.array)),
                         textureCoordinates: this.#transformUvs(this.#mesh.uvs, frame.start, frame.end),
                         color: null,
                         texture: this.#spriteSheet.texture,
@@ -410,8 +410,11 @@ class PlayerController extends CriterionSystem {
                 cameraBlueprint.transform.position.x += mouseDelta.x;
                 cameraBlueprint.transform.position.y += mouseDelta.y;
             }
+            console.log([...mouse.scaledPosition.array]);
+            console.log(Tile.tilePosition(new Vector3f(mouse.scaledPosition.array).add(cameraBlueprint.transform.position)).array);
         }
         else
             this.#mouseDelta = 0;
+        // console.log([...mouse.scaledPosition.array]);
     }
 }

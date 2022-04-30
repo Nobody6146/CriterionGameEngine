@@ -277,7 +277,7 @@ class CriterionMouse {
         this.#engine.logger.engine("mouse initialized");
     }
     get deltaPosition() {
-        return this.#previousPosition.subtract(this.position);
+        return this.#previousPosition.subtract(this.scaledPosition);
     }
     #mouseUpdate(event) {
         let canvas = this.#engine.canvas;
@@ -425,6 +425,7 @@ class CriterionEngine {
             this.#mouse.update(this.#deltaTime);
             if (this.#running)
                 window.requestAnimationFrame(this.#update.bind(this));
+            return;
         }
         catch (error) {
             console.error(error);

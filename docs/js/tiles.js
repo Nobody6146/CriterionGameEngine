@@ -3,11 +3,23 @@ class Tile {
     static SIZE = new Vector2f([64, 32]);
     constructor() {
     }
-    toScreen(tilePosition) {
-        return Tile.toScreen(tilePosition);
+    screenPosition(tilePosition) {
+        return Tile.screenPosition(tilePosition);
     }
-    static toScreen(tilePosition) {
-        return new Vector3f([(tilePosition.x - tilePosition.y) * Tile.SIZE.width / 2, (tilePosition.x + tilePosition.y) * Tile.SIZE.height / 2]);
+    static screenPosition(tilePosition) {
+        return new Vector2f([(tilePosition.x - tilePosition.y) * Tile.SIZE.width / 2 - Tile.SIZE.width / 2, (tilePosition.x + tilePosition.y) * Tile.SIZE.height / 2]);
+    }
+    tilePosition(screenPosition) {
+        return Tile.tilePosition(screenPosition);
+    }
+    static tilePosition(screen) {
+        //screen.x -= Tile.SIZE.width/2;
+        // let cell = new Vector2f([Math.floor((screenPosition.x - Tile.SIZE.width/2)/ Tile.SIZE.width), Math.floor(screenPosition.y / Tile.SIZE.height)]);
+        // return new Vector2f([cell.y + cell.x, cell.y - cell.x]);
+        //(screen.x / TILE_WIDTH_HALF + screen.y / TILE_HEIGHT_HALF) /2;
+        //map.y = (screen.y / TILE_HEIGHT_HALF -(screen.x / TILE_WIDTH_HALF)) /2;
+        return new Vector2f([Math.floor((screen.x / (Tile.SIZE.width / 2) + screen.y / (Tile.SIZE.height / 2)) / 2),
+            Math.floor((screen.y / (Tile.SIZE.height / 2) - screen.x / (Tile.SIZE.width / 2)) / 2)]);
     }
 }
 class TileMap {
@@ -22,8 +34,5 @@ class TileMap {
                     this.tiles[floor][y][x] = 0;
             }
         }
-    }
-    cellPosition(mouse, screenPosition) {
-        return new Vector2f([Math.floor(mouse.x / Tile.SIZE.width), Math.floor(mouse.y / Tile.SIZE.height)]);
     }
 }

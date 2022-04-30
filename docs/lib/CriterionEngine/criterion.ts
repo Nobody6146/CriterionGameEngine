@@ -328,7 +328,7 @@ class CriterionMouse {
     }
     
     get deltaPosition():Vector2f {
-        return this.#previousPosition.subtract(this.position);
+        return this.#previousPosition.subtract(this.scaledPosition);
     }
 
     #mouseUpdate(event: MouseEvent) {
@@ -509,6 +509,7 @@ abstract class CriterionEngine
             this.#mouse.update(this.#deltaTime);
             if(this.#running)
                 window.requestAnimationFrame(this.#update.bind(this));
+            return;
         }
         catch (error) {
             console.error(error);
