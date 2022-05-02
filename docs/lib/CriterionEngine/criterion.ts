@@ -398,6 +398,8 @@ abstract class CriterionEngine
 
     static #instance:CriterionEngine;
 
+    #componentTypes: Set<new (...args) => CriterionComponent>;
+
     constructor(options?:CriterionEngineOptions)
     { 
         if (this.constructor === CriterionEngine) {
@@ -478,6 +480,7 @@ abstract class CriterionEngine
         this.#sceneManager = new CriterionSceneManager(this);
         
         this.#running = true;
+        this.#componentTypes = new Set();
 
         this.logger.engine("initializing game");
         await this.init();
@@ -526,6 +529,17 @@ abstract class CriterionEngine
     }
     get frameRate() {
         return 1 / this.#deltaTime;
+    }
+
+    get registeredComponents():(new (...args) => CriterionComponent)[] {
+        return [...this.#componentTypes];
+    }
+    registeredComponent<Type extends CriterionComponent>(componentType:new (...args) => Type):boolean {
+        return this.#componentTypes.has(componentType);
+    }
+    /** Registers a component to be tracked by the engine (otherwise the component can't be added to entities)*/
+    registerComponent<Type extends CriterionComponent>(componentType:new (...args) => Type):void {
+        this.#componentTypes.add(componentType);
     }
 }
 
@@ -680,6 +694,10 @@ class CriterionEntity {
         this.#components = new Map();
     }
 
+    get id():number {
+        return this.#id;
+    }
+
     get scene() {
         return this.#scene;
     }
@@ -693,7 +711,7 @@ class CriterionEntity {
 
     /** Returns the entity's component of the given type or adds a new component if it doesn't exist */
     add<ComponentType extends CriterionComponent>(componentType:new (...args) => ComponentType) : ComponentType{
-        let registered = this.#scene.registeredComponent(componentType);
+        let registered = this.#scene.engine.registeredComponent(componentType);
         if(!registered)
         {
             this.#scene.engine.logger.warn(`${componentType.name} is not a registered component and cannot be added`);
@@ -708,14 +726,14 @@ class CriterionEntity {
     }
     
     /** Sets the component of the entity to a specific value */
-    set<ComponentType extends CriterionComponent>(componentType:new (...args) => ComponentType, component:ComponentType) : ComponentType {
-        let registered = this.#scene.registeredComponent(componentType);
+    set<ComponentType extends CriterionComponent, Type extends new (...args) => ComponentType>(component:ComponentType) : ComponentType {
+        let registered = this.#scene.engine.registeredComponent(component.constructor as Type);
         if(!registered)
         {
-            this.#scene.engine.logger.warn(`${componentType.name} is not a registered component and cannot be added`);
+            this.#scene.engine.logger.warn(`${(component.constructor as Type).name} is not a registered component and cannot be added`);
             return undefined;
         }
-        this.#components.set(componentType, component);
+        this.#components.set(component.constructor as Type, component);
         return component;
     }
 
@@ -760,7 +778,6 @@ abstract class CriterionScene {
 
     #nextEntityId: number;
     #entities: Map<number, CriterionEntity>;
-    #componentTypes: Set<new (...args) => CriterionComponent>;
     #systems:Map<new (scene:CriterionScene) => CriterionSystem, CriterionSystem>;
 
     constructor(engine:CriterionEngine) {
@@ -769,7 +786,6 @@ abstract class CriterionScene {
 
         this.#nextEntityId = 0;
         this.#entities = new Map();
-        this.#componentTypes = new Set();
         this.#systems = new Map();
     }
 
@@ -839,16 +855,6 @@ abstract class CriterionScene {
         }
     }
 
-    get registeredComponents():(new (...args) => CriterionComponent)[] {
-        return [...this.#componentTypes];
-    }
-    registeredComponent<Type extends CriterionComponent>(componentType:new (...args) => Type):boolean {
-        return this.#componentTypes.has(componentType);
-    }
-    /** Registers a component to be tracked by the engine (otherwise the component can't be added to entities)*/
-    registerComponent<Type extends CriterionComponent>(componentType:new (...args) => Type):void {
-        this.#componentTypes.add(componentType);
-    }
     /** Gets all the components of the type attached to entities */
     components<T extends CriterionComponent>(componentType:new (...args) => T): T[] {
         let components:T[] = [];
@@ -899,14 +905,14 @@ abstract class CriterionScene {
 
 abstract class CriterionBlueprint
 {
-    #entity;
+    #entity:CriterionEntity;
 
     constructor(entity:CriterionEntity) {
         this.#entity = entity;
     }
 
     #mapPropertiesToEntityComponents() {
-        let registeredComponents = this.#entity.scene.registeredComponents;
+        let registeredComponents = this.#entity.scene.engine.registeredComponents;
         for(let componentType of registeredComponents) {
             let componentName = componentType.name.toLowerCase();
             let endsWithComponent = componentName.lastIndexOf("component");

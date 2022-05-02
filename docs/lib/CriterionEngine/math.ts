@@ -249,6 +249,10 @@ class Vector4f {
     equals(vector:Vector4f):boolean {
         return this.x == vector.x && this.y == vector.y && this.z == vector.z && this.w == vector.w;
     }
+    contains(position:Vector2f | Vector3f):boolean {
+        return position.x >= this.x && position.x <= this.x + this.width
+            && position.y >= this.y && position.y <= this.y + this.height;
+    }
 }
 
 //Matrix3f====================

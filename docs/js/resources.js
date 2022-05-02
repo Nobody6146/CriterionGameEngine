@@ -1,5 +1,16 @@
 class ResourceNames {
-    static TILE_SPRITE_SHEET = "tiles";
+    static SQUARE = "square";
+    static TILE = "tiles";
+    static MONOSPACED = "monospaced";
+    static Humann = "human";
+    static Zombie = "zombie";
+}
+class RenderLayers {
+    static MAP = 0;
+    static TILEMAP = 1;
+    static MARKERS = 2;
+    static ENTITIES = 2;
+    static UI = 3;
 }
 class SpriteSheet {
     texture;
@@ -32,11 +43,15 @@ class Mesh {
     vertices;
     uvs;
     normals;
-    constructor(indices, vertices = [], uvs = [], normals = []) {
+    minVertex;
+    maxVertex;
+    constructor(indices, vertices = [], minVertex, maxVertex, uvs = [], normals = []) {
         this.indices = indices;
         this.vertices = vertices;
         this.uvs = uvs;
         this.normals = normals;
+        this.minVertex = minVertex;
+        this.maxVertex = maxVertex;
     }
 }
 class AnimationSequence {

@@ -21,6 +21,15 @@ class Tile {
         return new Vector2f([Math.floor((screen.x / (Tile.SIZE.width / 2) + screen.y / (Tile.SIZE.height / 2)) / 2),
             Math.floor((screen.y / (Tile.SIZE.height / 2) - screen.x / (Tile.SIZE.width / 2)) / 2)]);
     }
+    getEntityPosition(tilePosition, scale) {
+        return Tile.getEntityPosition(tilePosition, scale);
+    }
+    static getEntityPosition(tilePosition, scale) {
+        let position = Tile.screenPosition(tilePosition);
+        let xOffset = Math.floor((Tile.SIZE.width - scale.x) / 2);
+        let yOffset = Math.floor((Tile.SIZE.height / 2 - scale.y));
+        return position.add(new Vector2f([xOffset, yOffset]));
+    }
 }
 class TileMap {
     tiles;

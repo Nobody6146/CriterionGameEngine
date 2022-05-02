@@ -1,29 +1,29 @@
 class DemoTestScene extends CriterionScene {
     async prepare() {
-        this.registerComponent(CleanupComponent);
-        this.registerComponent(TransformComponent);
-        this.registerComponent(MeshComponent);
-        this.registerComponent(SpriteComponent);
-        this.registerComponent(RendererComponent);
-        this.registerComponent(CameraComponent);
-        this.registerComponent(AnimatorComponent);
-        this.registerComponent(NavigatorComponent);
-        this.registerComponent(PatrollerComponent);
-        this.registerComponent(FontComponent);
-        this.registerComponent(TextComponent);
+        this.engine.registerComponent(CleanupComponent);
+        this.engine.registerComponent(TransformComponent);
+        this.engine.registerComponent(MeshComponent);
+        this.engine.registerComponent(SpriteComponent);
+        this.engine.registerComponent(RendererComponent);
+        this.engine.registerComponent(CameraComponent);
+        this.engine.registerComponent(AnimatorComponent);
+        this.engine.registerComponent(NavigatorComponent);
+        this.engine.registerComponent(PatrollerComponent);
+        this.engine.registerComponent(FontComponent);
+        this.engine.registerComponent(TextComponent);
         //create our shader
         let shaderProgram = BatchRendererShader.create(this.engine);
         this.engine.resourceManager.add(shaderProgram);
         //Generate our mesh
         let mesh = CriterionMeshUtils.createSquare2DMesh();
-        this.engine.resourceManager.add(new Mesh(mesh.indices, mesh.vertices, mesh.uvs, mesh.normals), "player");
+        this.engine.resourceManager.add(new Mesh(mesh.indices, mesh.vertices, mesh.minVertex, mesh.maxVertex, mesh.uvs, mesh.normals), "player");
         //Load our texture
         let texture = await CriterionTextureUtils.loadTexture(this.engine, "../resources/images/markers.png", "linear");
         this.engine.resourceManager.add(texture.texture, "player");
         //Load the spriteshet
         let spriteSheet = new SpriteSheet(texture.texture, texture.image.width, texture.image.height, 64, 32);
         this.engine.resourceManager.add(spriteSheet, "player");
-        this.engine.resourceManager.add(spriteSheet, ResourceNames.TILE_SPRITE_SHEET);
+        this.engine.resourceManager.add(spriteSheet, "player");
         //load font
         let fontSheet = await CriterionFontUtils.loadFont("../resources/fonts/monospaced.fnt");
         let fontTexture = await CriterionTextureUtils.loadTexture(this.engine, "../resources/images/monospaced.png", "linear");

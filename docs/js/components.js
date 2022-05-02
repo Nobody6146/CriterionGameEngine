@@ -41,14 +41,20 @@ class MeshComponent {
     vertices;
     textureCoordinates;
     normals;
+    minVertex;
+    maxVertex;
     constructor() {
         this.indices = [];
         this.vertices = [];
         this.textureCoordinates = [];
         this.normals = [];
+        this.minVertex = null;
+        this.maxVertex = null;
     }
     clear() {
         this.vertices = [];
+        this.minVertex = null;
+        this.maxVertex = null;
         this.textureCoordinates = [];
         this.normals = [];
         this.indices = [];
@@ -56,6 +62,8 @@ class MeshComponent {
     set(mesh) {
         this.indices = mesh.indices;
         this.vertices = mesh.vertices;
+        this.minVertex = mesh.minVertex;
+        this.maxVertex = mesh.maxVertex;
         this.textureCoordinates = mesh.uvs;
         this.normals = mesh.normals;
         return this;
@@ -194,5 +202,23 @@ class TextComponent {
         this.height = 1;
         this.horizontalAlignment = "left";
         this.verticalAlignment = "top";
+    }
+}
+class SelectorComponent {
+    selectable;
+    constructor() {
+        this.selectable = true;
+    }
+    highlight(entity) {
+    }
+    unhighlight(entity) {
+    }
+    select(entity) {
+    }
+    deselect(entity) {
+    }
+}
+class TurnTrackerComponent {
+    constructor() {
     }
 }

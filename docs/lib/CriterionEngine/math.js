@@ -235,6 +235,10 @@ class Vector4f {
     equals(vector) {
         return this.x == vector.x && this.y == vector.y && this.z == vector.z && this.w == vector.w;
     }
+    contains(position) {
+        return position.x >= this.x && position.x <= this.x + this.width
+            && position.y >= this.y && position.y <= this.y + this.height;
+    }
 }
 //Matrix3f====================
 class Matrix3f {

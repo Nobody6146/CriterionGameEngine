@@ -335,6 +335,7 @@ class CriterionEngine {
     #canvas;
     #gl;
     static #instance;
+    #componentTypes;
     constructor(options) {
         if (this.constructor === CriterionEngine) {
             throw new TypeError('CriterionEngine is an abstract class');
@@ -402,6 +403,7 @@ class CriterionEngine {
         this.#mouse = new CriterionMouse(this);
         this.#sceneManager = new CriterionSceneManager(this);
         this.#running = true;
+        this.#componentTypes = new Set();
         this.logger.engine("initializing game");
         await this.init();
         this.logger.engine("game initialized");
@@ -441,6 +443,16 @@ class CriterionEngine {
     }
     get frameRate() {
         return 1 / this.#deltaTime;
+    }
+    get registeredComponents() {
+        return [...this.#componentTypes];
+    }
+    registeredComponent(componentType) {
+        return this.#componentTypes.has(componentType);
+    }
+    /** Registers a component to be tracked by the engine (otherwise the component can't be added to entities)*/
+    registerComponent(componentType) {
+        this.#componentTypes.add(componentType);
     }
 }
 class CriterionResourceManager {
@@ -571,6 +583,9 @@ class CriterionEntity {
         this.#id = id;
         this.#components = new Map();
     }
+    get id() {
+        return this.#id;
+    }
     get scene() {
         return this.#scene;
     }
@@ -583,7 +598,7 @@ class CriterionEntity {
     }
     /** Returns the entity's component of the given type or adds a new component if it doesn't exist */
     add(componentType) {
-        let registered = this.#scene.registeredComponent(componentType);
+        let registered = this.#scene.engine.registeredComponent(componentType);
         if (!registered) {
             this.#scene.engine.logger.warn(`${componentType.name} is not a registered component and cannot be added`);
             return undefined;
@@ -596,13 +611,13 @@ class CriterionEntity {
         return component;
     }
     /** Sets the component of the entity to a specific value */
-    set(componentType, component) {
-        let registered = this.#scene.registeredComponent(componentType);
+    set(component) {
+        let registered = this.#scene.engine.registeredComponent(component.constructor);
         if (!registered) {
-            this.#scene.engine.logger.warn(`${componentType.name} is not a registered component and cannot be added`);
+            this.#scene.engine.logger.warn(`${component.constructor.name} is not a registered component and cannot be added`);
             return undefined;
         }
-        this.#components.set(componentType, component);
+        this.#components.set(component.constructor, component);
         return component;
     }
     /** Removes the entity's component of the given type if it exist */
@@ -635,14 +650,12 @@ class CriterionScene {
     #loaded;
     #nextEntityId;
     #entities;
-    #componentTypes;
     #systems;
     constructor(engine) {
         this.#engine = engine;
         this.#loaded = false;
         this.#nextEntityId = 0;
         this.#entities = new Map();
-        this.#componentTypes = new Set();
         this.#systems = new Map();
     }
     get engine() {
@@ -697,16 +710,6 @@ class CriterionScene {
             this.#systems.delete(system);
         }
     }
-    get registeredComponents() {
-        return [...this.#componentTypes];
-    }
-    registeredComponent(componentType) {
-        return this.#componentTypes.has(componentType);
-    }
-    /** Registers a component to be tracked by the engine (otherwise the component can't be added to entities)*/
-    registerComponent(componentType) {
-        this.#componentTypes.add(componentType);
-    }
     /** Gets all the components of the type attached to entities */
     components(componentType) {
         let components = [];
@@ -756,7 +759,7 @@ class CriterionBlueprint {
         this.#entity = entity;
     }
     #mapPropertiesToEntityComponents() {
-        let registeredComponents = this.#entity.scene.registeredComponents;
+        let registeredComponents = this.#entity.scene.engine.registeredComponents;
         for (let componentType of registeredComponents) {
             let componentName = componentType.name.toLowerCase();
             let endsWithComponent = componentName.lastIndexOf("component");

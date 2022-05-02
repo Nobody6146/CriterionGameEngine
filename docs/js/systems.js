@@ -162,6 +162,8 @@ class TextBatcher extends CriterionSystem {
         let batchRenderer = this.scene.system(BatchRendererSystem);
         for (let blueprint of blueprints) {
             blueprint.mesh.clear();
+            blueprint.mesh.minVertex = this.#squareMesh.minVertex;
+            blueprint.mesh.maxVertex = this.#squareMesh.maxVertex;
             if (!blueprint.text.string)
                 continue;
             let cursor = new Vector2f([0, 0]);
@@ -335,7 +337,7 @@ class TileSystem extends CriterionSystem {
     constructor(scene) {
         super(scene);
         this.#tileMap = new TileMap(20, 20, 1);
-        this.#spriteSheet = this.scene.engine.resourceManager.get(SpriteSheet, ResourceNames.TILE_SPRITE_SHEET);
+        this.#spriteSheet = this.scene.engine.resourceManager.get(SpriteSheet, ResourceNames.TILE);
         this.#mesh = CriterionMeshUtils.createSquare2DMesh();
     }
     update(deltaTime) {
@@ -370,7 +372,7 @@ class TileSystem extends CriterionSystem {
                         textureCoordinates: this.#transformUvs(this.#mesh.uvs, frame.start, frame.end),
                         color: null,
                         texture: this.#spriteSheet.texture,
-                        layer: -1,
+                        layer: RenderLayers.TILEMAP,
                     });
                 }
             }
@@ -400,21 +402,129 @@ class PlayerController extends CriterionSystem {
         this.#mouseDelta = 0;
     }
     update(deltaTime) {
-        let cameraBlueprint = CriterionBlueprint.blueprints(this.scene, CameraBlueprint)[0];
+        let cameraBlueprint = this.#getCamera();
         let mouse = this.scene.engine.mouse;
         let button = mouse.buttons.get(CriterionMouseButtons.buttonLeft);
         if (button.down) {
             let mouseDelta = mouse.deltaPosition;
             this.#mouseDelta += Math.abs(mouseDelta.x) + Math.abs(mouseDelta.y);
-            if (this.#mouseDelta > PlayerController.SCROLL_THRESHOLD) {
+            if (this.scrolling) {
                 cameraBlueprint.transform.position.x += mouseDelta.x;
                 cameraBlueprint.transform.position.y += mouseDelta.y;
             }
-            console.log([...mouse.scaledPosition.array]);
-            console.log(Tile.tilePosition(new Vector3f(mouse.scaledPosition.array).add(cameraBlueprint.transform.position)).array);
+            // console.log([...mouse.scaledPosition.array]);
+            // console.log(Tile.tilePosition(new Vector3f(mouse.scaledPosition.array).add(cameraBlueprint.transform.position)).array);
         }
         else
             this.#mouseDelta = 0;
         // console.log([...mouse.scaledPosition.array]);
+    }
+    #getCamera() {
+        return this.scene.system(CameraSystem).getCamera();
+    }
+    get scrolling() {
+        return this.#mouseDelta > PlayerController.SCROLL_THRESHOLD;
+    }
+}
+class UiControllerSystem extends CriterionSystem {
+    #highlighted;
+    #selected;
+    constructor(scene) {
+        super(scene);
+        this.#highlighted = null;
+        this.#selected = null;
+    }
+    update(deltaTime) {
+        let mouse = this.scene.engine.mouse;
+        let camera = this.#getCamera();
+        let selectables = this.#getSelectables();
+        this.#highlight(mouse, camera, selectables);
+        this.#select(mouse);
+    }
+    #getCamera() {
+        return this.scene.system(CameraSystem).getCamera();
+    }
+    #getSelectables() {
+        return CriterionBlueprint.blueprints(this.scene, SelectableBlueprint);
+    }
+    #highlight(mouse, camera, selectables) {
+        let cursor = new Vector3f(mouse.scaledPosition.array).add(camera.transform.position);
+        //Figure out what the transform doesn't work
+        //.transform(camera.transform.transformation)
+        let highlighted = null;
+        for (let selectable of selectables) {
+            if (!selectable.selector.selectable)
+                continue;
+            if (selectable.contains(cursor)) {
+                highlighted = selectable;
+                break;
+            }
+        }
+        if (this.#highlighted?.entity.id != highlighted?.entity.id) {
+            if (this.#highlighted != null)
+                this.#highlighted.selector.unhighlight(this.#highlighted.entity);
+            this.#highlighted = highlighted;
+            if (this.#highlighted != null)
+                this.#highlighted.selector.highlight(this.#highlighted.entity);
+        }
+        return highlighted;
+    }
+    #select(mouse) {
+        let scrollingCamera = this.scene.system(PlayerController)?.scrolling ?? false;
+        let button = mouse.buttons.get(CriterionMouseButtons.buttonLeft);
+        if (button.newPress) {
+            this.#selected = this.#highlighted;
+        }
+        if (button.up) {
+            //Select the element
+            if (!scrollingCamera && this.#selected && this.#selected == this.#highlighted)
+                this.#selected.selector.select(this.#selected.entity);
+            this.#selected = null;
+        }
+    }
+}
+class TurnController extends CriterionSystem {
+    #turnNumber;
+    #waveNumber;
+    #unitTurn;
+    constructor(scene) {
+        super(scene);
+        this.#turnNumber = 1;
+        this.#waveNumber = 1;
+        this.#unitTurn = "Player";
+    }
+    get turnNumber() {
+        return this.#turnNumber;
+    }
+    get waveNumber() {
+        return this.#waveNumber;
+    }
+    get unitTurn() {
+        return this.#unitTurn;
+    }
+    update(deltaTime) {
+        let camera = this.#getCamera();
+        let turnTracker = this.#getTurnTracker();
+        let renderResolution = this.scene.engine.window.renderResolution;
+        turnTracker.transform.position.x = camera.transform.position.x + (renderResolution.width - turnTracker.text.width) / 2;
+        turnTracker.transform.position.y = camera.transform.position.y;
+        turnTracker.text.string = `${this.unitTurn} Turn ${this.#turnNumber}\nWave ${this.#waveNumber}`;
+    }
+    #getTurnTracker() {
+        return CriterionBlueprint.blueprints(this.scene, TurnTrackerDisplayBlueprint)[0];
+    }
+    #getCamera() {
+        return this.scene.system(CameraSystem).getCamera();
+    }
+    passTurn() {
+        switch (this.#unitTurn) {
+            case "Player":
+                this.#unitTurn = "Zombie";
+                break;
+            case "Zombie":
+                this.#unitTurn = "Player";
+                this.#turnNumber++;
+                break;
+        }
     }
 }

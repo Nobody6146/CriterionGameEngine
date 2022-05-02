@@ -1,5 +1,17 @@
 class ResourceNames {
-    static TILE_SPRITE_SHEET = "tiles";
+    static SQUARE = "square";
+    static TILE = "tiles";
+    static MONOSPACED = "monospaced";
+    static Humann = "human";
+    static Zombie = "zombie";
+}
+
+class RenderLayers {
+    static MAP = 0;
+    static TILEMAP = 1;
+    static MARKERS = 2;
+    static ENTITIES = 2;
+    static UI = 3;
 }
 
 interface SystemEvent {
@@ -40,12 +52,16 @@ class Mesh {
     vertices:Vector3f[];
     uvs:Vector2f[];
     normals:Vector3f[];
+    minVertex:Vector3f;
+    maxVertex:Vector3f;
 
-    constructor(indices:number[], vertices:Vector3f[] = [], uvs:Vector2f[] = [], normals:Vector3f[] = []) {
+    constructor(indices:number[], vertices:Vector3f[] = [], minVertex:Vector3f, maxVertex:Vector3f, uvs:Vector2f[] = [], normals:Vector3f[] = []) {
         this.indices = indices;
         this.vertices = vertices;
         this.uvs = uvs;
         this.normals = normals;
+        this.minVertex = minVertex;
+        this.maxVertex = maxVertex;
     }
 }
 

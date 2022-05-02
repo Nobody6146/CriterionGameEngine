@@ -100,6 +100,8 @@ class CriterionMeshUtils {
                 new Vector3f([0.5, -0.5, 0]),
                 new Vector3f([0.5, 0.5, 0]),
             ],
+            minVertex: new Vector3f([-.5, -.5, 0]),
+            maxVertex: new Vector3f([.5, .5, 0]),
             uvs: [
                 new Vector2f([0, 1,]),
                 new Vector2f([0, 0,]),
@@ -123,6 +125,8 @@ class CriterionMeshUtils {
                 new Vector3f([1, 0, 0]),
                 new Vector3f([1, 1, 0]),
             ],
+            minVertex: new Vector3f([0, 0, 0]),
+            maxVertex: new Vector3f([1, 1, 0]),
             uvs: [
                 new Vector2f([0, 1,]),
                 new Vector2f([0, 0,]),

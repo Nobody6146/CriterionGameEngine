@@ -54,16 +54,22 @@ class MeshComponent implements CriterionComponent
     vertices:Vector3f[];
     textureCoordinates:Vector2f[];
     normals:Vector3f[];
+    minVertex:Vector3f;
+    maxVertex:Vector3f;
 
     constructor() {
         this.indices = [];
         this.vertices = [];
         this.textureCoordinates = [];
         this.normals = [];
+        this.minVertex = null;
+        this.maxVertex = null;
     }
 
     clear() {
         this.vertices = [];
+        this.minVertex = null;
+        this.maxVertex = null;
         this.textureCoordinates = [];
         this.normals = [];
         this.indices = [];
@@ -72,6 +78,8 @@ class MeshComponent implements CriterionComponent
     set(mesh:Mesh):this {
         this.indices = mesh.indices;
         this.vertices = mesh.vertices;
+        this.minVertex = mesh.minVertex;
+        this.maxVertex = mesh.maxVertex;
         this.textureCoordinates = mesh.uvs;
         this.normals = mesh.normals;
         return this;
@@ -234,5 +242,37 @@ class TextComponent implements CriterionComponent {
         this.height = 1;
         this.horizontalAlignment = "left";
         this.verticalAlignment = "top";
+    }
+}
+
+class SelectorComponent implements CriterionComponent {
+
+    selectable:boolean;
+
+    constructor() {
+        this.selectable = true;
+    }
+
+    highlight(entity:CriterionEntity): void {
+
+    }
+
+    unhighlight(entity:CriterionEntity): void {
+
+    }
+
+    select(entity:CriterionEntity): void {
+
+    }
+
+    deselect(entity:CriterionEntity): void {
+
+    }
+}
+
+class TurnTrackerComponent implements CriterionComponent {
+
+    constructor() {
+
     }
 }
