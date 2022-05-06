@@ -111,3 +111,147 @@ class FontStyle {
         this.fontSheet = fontSheet;
     }
 }
+
+class TextGeneratorMeshGenerator {
+    static generateTextMesh(text:string, width:number, height:number, fontStyle:FontStyle, transformation:Matrix4f, horizontalAlignment:HorizontalAlignment, verticalAlignment:VeriticalAlignment) {
+        let squareMesh = CriterionMeshUtils.createSquare2DMesh();
+        let mesh:Mesh = {
+            vertices: [],
+            minVertex: null,
+            maxVertex: null,
+            uvs: [],
+            normals: [],
+            indices: [],
+        }
+
+        mesh.minVertex = squareMesh.minVertex;
+        mesh.maxVertex = squareMesh.maxVertex;
+        if(!text)
+            return mesh;
+
+        let cursor = new Vector2f([0, 0]);
+        let startHeight = 0;
+        
+        let fontSheet = fontStyle.fontSheet;
+        let size = {
+            width: width,
+            height: height
+        };
+        let lines:{chars:FontCharacter[], width:number;}[] = this.#formatIntoLines(text, size, fontSheet);
+
+        switch(verticalAlignment)
+        {
+            case "center":
+                startHeight = fontSheet.baseline + (fontSheet.height - lines.length*fontSheet.lineHeight)/2;
+                break;
+            case "bottom":
+                startHeight = fontSheet.baseline + fontSheet.height - lines.length*fontSheet.lineHeight;
+                break;
+            case "top":
+            default:
+                startHeight = fontSheet.baseline;
+        }
+        
+        cursor.y += startHeight;
+        
+        let characterCount = 0;
+        for(let line of lines)
+        {
+            let chars = line.chars;
+            
+            let startWidth = 0;
+            switch(horizontalAlignment)
+            {
+                case "center":
+                    startWidth = (size.width - line.width)/2;
+                    break;
+                case "right":
+                    startWidth = size.width - line.width;
+                    break;
+                case "left":
+                default:
+                    startWidth = 0;
+            }
+            
+            cursor.x += startWidth;
+            
+            for(let c of chars)
+            {
+                let position = new Vector3f([cursor.x + c.lineOffset.x, cursor.y + c.lineOffset.y - fontSheet.baseline, 0]);
+                //Queue the data
+                //console.log("ascii ", String.fromCharCode(c.asciiValue), " ", position.array);
+                for(let i = 0; i < squareMesh.vertices.length; i++)
+                {
+                    let vertex = squareMesh.vertices[i];
+                    mesh.vertices.push(new Vector3f([vertex.x * c.width, vertex.y * c.height, vertex.z]).transform(transformation).add(position));
+                    let uv = squareMesh.uvs[i];
+                    mesh.uvs.push(new Vector2f([c.frameStart.x + c.frameSize.x * uv.x, c.frameStart.y + c.frameSize.y * uv.y]));
+                    let normal = squareMesh.normals[i];
+                    mesh.normals.push(normal);
+                }
+                for(let i = 0; i < squareMesh.indices.length; i++)
+                {
+                    let index = squareMesh.indices[i];
+                    mesh.indices.push(characterCount*squareMesh.vertices.length + index);
+                }
+                characterCount++;
+                
+                cursor.x += c.lineAdvance;
+            }
+            
+            cursor = new Vector2f([0, cursor.y + fontSheet.lineHeight]);
+        }
+        
+        return mesh;
+    }
+
+    static #formatIntoLines(text:string, size:{width:number, height:number}, fontSheet:FontSheet): {chars:FontCharacter[], width:number;}[]
+	{
+		let cursor = new Vector2f([0, fontSheet.baseline]);
+		
+		let lines:{chars:FontCharacter[], width:number;}[] = [];
+		
+		let lineChars:FontCharacter[] = [];
+		let lineWidth = 0;
+		for(let i = 0; i < text.length; i++)
+		{
+			let c = text.charAt(i);
+			
+			//Process newline
+			if(c == '\n')
+			{
+				lines.push({chars: lineChars, width: lineWidth});
+				lineChars = [];
+				lineWidth = 0;
+				cursor = new Vector2f([0, cursor.y + fontSheet.lineHeight]);
+				continue;
+			}
+			
+			let fontC = fontSheet.characters.get(c.charCodeAt(0));
+			if(fontC == null)
+				continue;
+			
+			//Move to the next line if we don't have space
+			while(cursor.y <= size.height && cursor.x + fontC.lineAdvance >= size.width)
+			{
+				lines.push({chars: lineChars, width: lineWidth});
+				lineChars = [];
+				lineWidth = 0;
+				cursor = new Vector2f([0, cursor.y + fontSheet.lineHeight]);
+			}
+			
+			if(cursor.y > size.height)
+				break;
+			
+			lineChars.push(fontC);
+			lineWidth += fontC.lineAdvance;
+            cursor.x += fontC.lineAdvance;
+		}
+		
+		//Read the last character, so add the last line
+		if(lineWidth > 0)
+			lines.push({chars: lineChars, width: lineWidth});
+		
+		return lines;
+	}
+}

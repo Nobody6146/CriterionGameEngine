@@ -1269,7 +1269,7 @@ class CriterionMemmoryManager
 
 interface CriterionRenderBatchEntity {
     vertices:Vector3f[];
-    textureCoordinates:Vector2f[];
+    uvs:Vector2f[];
     indicies:number[];
     color:Vector4f;
     texture:WebGLTexture;
@@ -1375,7 +1375,7 @@ class CriterionRenderBatcher {
                 for(let i = 0; i < renderable.vertices.length; i++)
                 {
                     let vertice = renderable.vertices[i];
-                    let textureCoords = renderable.textureCoordinates[i] ?? new Vector2f([0, 0]);
+                    let textureCoords = renderable.uvs[i] ?? new Vector2f([0, 0]);
                     batch.buffer.push(...vertice.array);
                     batch.buffer.push(...textureCoords.array);
                     batch.buffer.push(textureId);

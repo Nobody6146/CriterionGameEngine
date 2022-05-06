@@ -39,14 +39,14 @@ class CameraComponent {
 class MeshComponent {
     indices;
     vertices;
-    textureCoordinates;
+    uvs;
     normals;
     minVertex;
     maxVertex;
     constructor() {
         this.indices = [];
         this.vertices = [];
-        this.textureCoordinates = [];
+        this.uvs = [];
         this.normals = [];
         this.minVertex = null;
         this.maxVertex = null;
@@ -55,7 +55,7 @@ class MeshComponent {
         this.vertices = [];
         this.minVertex = null;
         this.maxVertex = null;
-        this.textureCoordinates = [];
+        this.uvs = [];
         this.normals = [];
         this.indices = [];
     }
@@ -64,7 +64,7 @@ class MeshComponent {
         this.vertices = mesh.vertices;
         this.minVertex = mesh.minVertex;
         this.maxVertex = mesh.maxVertex;
-        this.textureCoordinates = mesh.uvs;
+        this.uvs = mesh.uvs;
         this.normals = mesh.normals;
         return this;
     }

@@ -24,7 +24,7 @@ class RenderableSpriteBlueprint extends CriterionBlueprint {
         let results = [];
         let frame = this.sprite.frameCoordinates;
         let frameSize = new Vector2f([frame.end.x - frame.start.x, frame.end.y - frame.start.y]);
-        for (let coordinate of this.mesh.textureCoordinates) {
+        for (let coordinate of this.mesh.uvs) {
             results.push(new Vector2f([frame.start.x + frameSize.x * coordinate.x, frame.start.y + frameSize.y * coordinate.y]));
         }
         return results;

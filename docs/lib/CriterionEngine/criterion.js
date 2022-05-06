@@ -1146,7 +1146,7 @@ class CriterionRenderBatcher {
                 //Batch the model's data
                 for (let i = 0; i < renderable.vertices.length; i++) {
                     let vertice = renderable.vertices[i];
-                    let textureCoords = renderable.textureCoordinates[i] ?? new Vector2f([0, 0]);
+                    let textureCoords = renderable.uvs[i] ?? new Vector2f([0, 0]);
                     batch.buffer.push(...vertice.array);
                     batch.buffer.push(...textureCoords.array);
                     batch.buffer.push(textureId);

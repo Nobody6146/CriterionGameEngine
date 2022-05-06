@@ -90,6 +90,7 @@ class CriterionShaderProgramUtils {
         return engine.memoryManager.createShaderProgram(vertexShaderSource, fragmentShaderSource, attributes, uniforms);
     }
 }
+;
 class CriterionMeshUtils {
     static createSquare3DMesh() {
         return {

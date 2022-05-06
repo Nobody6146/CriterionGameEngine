@@ -172,7 +172,7 @@ class SpriteBatcherSystem extends CriterionSystem {
             let renderable:CriterionRenderBatchEntity = {
                 vertices: blueprint.transformedVertices(),
                 indicies: indices,
-                textureCoordinates: blueprint.transformedTextureCoordinates(),
+                uvs: blueprint.transformedTextureCoordinates(),
                 color: blueprint.sprite.color,
                 texture: blueprint.sprite.spriteSheet?.texture ?? blueprint.sprite.texture,
                 layer: blueprint.renderer.layer,
@@ -204,89 +204,15 @@ class TextBatcher extends CriterionSystem {
         for(let blueprint of blueprints)
         {
             blueprint.mesh.clear();
-            blueprint.mesh.minVertex = this.#squareMesh.minVertex;
-            blueprint.mesh.maxVertex = this.#squareMesh.maxVertex;
-            if(!blueprint.text.string)
-                continue;
+            let text = blueprint.text;
+            let mesh = TextGeneratorMeshGenerator.generateTextMesh(text.string, text.width, text.height, blueprint.font.fontStyle,
+                blueprint.transform.transformation, text.horizontalAlignment, text.verticalAlignment);
+            blueprint.mesh.set(mesh);
 
-            let cursor = new Vector2f([0, 0]);
-            let startHeight = 0;
-            
-            let fontSheet = blueprint.font.fontStyle.fontSheet;
-            let size = {
-                width: blueprint.text.width,
-                height: blueprint.text.height
-            };
-            let transformation = blueprint.transform.transformation;
-            let lines:{chars:FontCharacter[], width:number;}[] = this.#formatIntoLines(blueprint.text.string, size, fontSheet);
-
-            switch(blueprint.text.verticalAlignment)
-            {
-                case "center":
-                    startHeight = fontSheet.baseline + (fontSheet.height - lines.length*fontSheet.lineHeight)/2;
-                    break;
-                case "bottom":
-                    startHeight = fontSheet.baseline + fontSheet.height - lines.length*fontSheet.lineHeight;
-                    break;
-                case "top":
-                default:
-                    startHeight = fontSheet.baseline;
-            }
-            
-            cursor.y += startHeight;
-            
-            let characterCount = 0;
-            for(let line of lines)
-            {
-                let chars = line.chars;
-                
-                let startWidth = 0;
-                switch(blueprint.text.horizontalAlignment)
-                {
-                    case "center":
-                        startWidth = (size.width - line.width)/2;
-                        break;
-                    case "right":
-                        startWidth = size.width - line.width;
-                        break;
-                    case "left":
-                    default:
-                        startWidth = 0;
-                }
-                
-                cursor.x += startWidth;
-                
-                for(let c of chars)
-                {
-                    let position = new Vector3f([cursor.x + c.lineOffset.x, cursor.y + c.lineOffset.y - fontSheet.baseline, 0]);
-                    //Queue the data
-                    //console.log("ascii ", String.fromCharCode(c.asciiValue), " ", position.array);
-                    for(let i = 0; i < this.#squareMesh.vertices.length; i++)
-                    {
-                        let vertex = this.#squareMesh.vertices[i];
-                        blueprint.mesh.vertices.push(new Vector3f([vertex.x * c.width, vertex.y * c.height, vertex.z]).transform(transformation).add(position));
-                        let uv = this.#squareMesh.uvs[i];
-                        blueprint.mesh.textureCoordinates.push(new Vector2f([c.frameStart.x + c.frameSize.x * uv.x, c.frameStart.y + c.frameSize.y * uv.y]));
-                        let normal = this.#squareMesh.normals[i];
-                        blueprint.mesh.normals.push(normal);
-                    }
-                    for(let i = 0; i < this.#squareMesh.indices.length; i++)
-                    {
-                        let index = this.#squareMesh.indices[i];
-                        blueprint.mesh.indices.push(characterCount*this.#squareMesh.vertices.length + index);
-                    }
-                    characterCount++;
-                    
-                    cursor.x += c.lineAdvance;
-                }
-                
-                cursor = new Vector2f([0, cursor.y + fontSheet.lineHeight]);
-            }
-            
             batchRenderer.renderBatcher.buffer({
                 indicies: blueprint.mesh.indices,
                 vertices: blueprint.mesh.vertices,
-                textureCoordinates: blueprint.mesh.textureCoordinates,
+                uvs: blueprint.mesh.uvs,
                 color: null,
                 texture: blueprint.font.fontStyle.texture,
                 layer: blueprint.renderer.layer,
@@ -294,56 +220,6 @@ class TextBatcher extends CriterionSystem {
         }
 
         //this.scene.engine.terminate();
-	}
-		
-	#formatIntoLines(text:string, size:{width:number, height:number}, fontSheet:FontSheet): {chars:FontCharacter[], width:number;}[]
-	{
-		let cursor = new Vector2f([0, fontSheet.baseline]);
-		
-		let lines:{chars:FontCharacter[], width:number;}[] = [];
-		
-		let lineChars:FontCharacter[] = [];
-		let lineWidth = 0;
-		for(let i = 0; i < text.length; i++)
-		{
-			let c = text.charAt(i);
-			
-			//Process newline
-			if(c == '\n')
-			{
-				lines.push({chars: lineChars, width: lineWidth});
-				lineChars = [];
-				lineWidth = 0;
-				cursor = new Vector2f([0, cursor.y + fontSheet.lineHeight]);
-				continue;
-			}
-			
-			let fontC = fontSheet.characters.get(c.charCodeAt(0));
-			if(fontC == null)
-				continue;
-			
-			//Move to the next line if we don't have space
-			while(cursor.y <= size.height && cursor.x + fontC.lineAdvance >= size.width)
-			{
-				lines.push({chars: lineChars, width: lineWidth});
-				lineChars = [];
-				lineWidth = 0;
-				cursor = new Vector2f([0, cursor.y + fontSheet.lineHeight]);
-			}
-			
-			if(cursor.y > size.height)
-				break;
-			
-			lineChars.push(fontC);
-			lineWidth += fontC.lineAdvance;
-            cursor.x += fontC.lineAdvance;
-		}
-		
-		//Read the last character, so add the last line
-		if(lineWidth > 0)
-			lines.push({chars: lineChars, width: lineWidth});
-		
-		return lines;
 	}
 
     #getRenderables():RenderableTextBlueprint[] {
@@ -464,7 +340,7 @@ class TileSystem extends CriterionSystem {
                     batchRenderer.buffer({
                         indicies: this.#mesh.indices,
                         vertices: this.#transformVertices(this.#mesh.vertices, transformation, new Vector3f(cursor.array)),
-                        textureCoordinates: this.#transformUvs(this.#mesh.uvs, frame.start, frame.end),
+                        uvs: this.#transformUvs(this.#mesh.uvs, frame.start, frame.end),
                         color: null,
                         texture: this.#spriteSheet.texture,
                         layer: RenderLayers.TILEMAP,

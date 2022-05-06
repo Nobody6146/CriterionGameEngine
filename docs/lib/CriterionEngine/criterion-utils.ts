@@ -100,8 +100,17 @@ class CriterionShaderProgramUtils
     }
 }
 
+interface CriterionMeshUtilsMesh {
+    indices:number[],
+    vertices:Vector3f[],
+    minVertex:Vector3f,
+    maxVertex:Vector3f,
+    uvs:Vector2f[],
+    normals:Vector3f[] 
+};
+
 class CriterionMeshUtils {
-    static createSquare3DMesh(): {indices:number[], vertices:Vector3f[], minVertex:Vector3f, maxVertex:Vector3f, uvs:Vector2f[], normals:Vector3f[] } {
+    static createSquare3DMesh(): CriterionMeshUtilsMesh {
         return {
             indices: [0, 1, 3, 3, 1, 2],
             vertices: [
@@ -127,7 +136,7 @@ class CriterionMeshUtils {
         };
     }
 
-    static createSquare2DMesh(): {indices:number[], vertices:Vector3f[], minVertex:Vector3f, maxVertex:Vector3f, uvs:Vector2f[], normals:Vector3f[] } {
+    static createSquare2DMesh(): CriterionMeshUtilsMesh {
         return {
             indices: [0, 1, 3, 3, 1, 2],
             vertices: [

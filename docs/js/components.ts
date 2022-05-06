@@ -52,7 +52,7 @@ class MeshComponent implements CriterionComponent
 {
     indices:number[];
     vertices:Vector3f[];
-    textureCoordinates:Vector2f[];
+    uvs:Vector2f[];
     normals:Vector3f[];
     minVertex:Vector3f;
     maxVertex:Vector3f;
@@ -60,7 +60,7 @@ class MeshComponent implements CriterionComponent
     constructor() {
         this.indices = [];
         this.vertices = [];
-        this.textureCoordinates = [];
+        this.uvs = [];
         this.normals = [];
         this.minVertex = null;
         this.maxVertex = null;
@@ -70,7 +70,7 @@ class MeshComponent implements CriterionComponent
         this.vertices = [];
         this.minVertex = null;
         this.maxVertex = null;
-        this.textureCoordinates = [];
+        this.uvs = [];
         this.normals = [];
         this.indices = [];
     }
@@ -80,7 +80,7 @@ class MeshComponent implements CriterionComponent
         this.vertices = mesh.vertices;
         this.minVertex = mesh.minVertex;
         this.maxVertex = mesh.maxVertex;
-        this.textureCoordinates = mesh.uvs;
+        this.uvs = mesh.uvs;
         this.normals = mesh.normals;
         return this;
     }
