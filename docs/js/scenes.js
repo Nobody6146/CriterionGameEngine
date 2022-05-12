@@ -8,6 +8,7 @@ class BaseLevelScene extends CriterionScene {
         this.addSystem(TurnController);
         this.addSystem(AnimatorSystem);
         this.addSystem(SpriteBatcherSystem);
+        this.addSystem(ProgressbarBatcher);
         this.addSystem(TextBatcher);
         this.addSystem(TileSystem);
         this.addSystem(BatchRendererSystem);
@@ -15,7 +16,8 @@ class BaseLevelScene extends CriterionScene {
         this.addSystem(EventSystem);
         //Create camera
         let camera = CameraBlueprint.create(this);
-        let turnDisplay = TurnTrackerDisplayBlueprint.create(this);
+        UiBuilder.addTurnDisplay(this);
+        UiBuilder.addHealthbar(this);
         // let textbox = RenderableTextBlueprint.create(this);
         // //texbox.entity.add(SpriteComponent);
         // //textbox.transform.scale = new Vector3f([50, 50,50]);

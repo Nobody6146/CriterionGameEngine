@@ -15,6 +15,8 @@ class TurnDeadGame extends CriterionEngine {
         this.registerComponent(TextComponent);
         this.registerComponent(SelectorComponent);
         this.registerComponent(TurnTrackerComponent);
+        this.registerComponent(UiLayoutComponent);
+        this.registerComponent(ProgressComponent);
 
         //create our shader
         let shaderProgram = BatchRendererShader.create(this);

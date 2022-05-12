@@ -761,8 +761,8 @@ class CriterionBlueprint {
     #mapPropertiesToEntityComponents() {
         let registeredComponents = this.#entity.scene.engine.registeredComponents;
         for (let componentType of registeredComponents) {
-            let componentName = componentType.name.toLowerCase();
-            let endsWithComponent = componentName.lastIndexOf("component");
+            let componentName = componentType.name.substring(0, 1).toLowerCase() + componentType.name.substring(1);
+            let endsWithComponent = componentName.lastIndexOf("Component");
             let namingConvention = endsWithComponent < 0
                 ? componentName
                 : componentName.substring(0, endsWithComponent);

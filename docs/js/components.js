@@ -222,3 +222,23 @@ class TurnTrackerComponent {
     constructor() {
     }
 }
+class UiLayoutComponent {
+    offset;
+    entities;
+    absolute;
+    constructor() {
+        this.entities = new Set();
+        this.offset = new Vector2f();
+        this.absolute = false;
+    }
+}
+class ProgressComponent {
+    value;
+    primaryColor;
+    secondaryColor;
+    constructor() {
+        this.value = 0;
+        this.primaryColor = new Vector4f([1, 0, 0, .8]);
+        this.secondaryColor = new Vector4f([.2, .2, .2, .8]);
+    }
+}

@@ -424,6 +424,7 @@ class UiControllerSystem extends CriterionSystem {
     update(deltaTime: number): void {
         let mouse = this.scene.engine.mouse;
         let camera = this.#getCamera();
+        this.#positionUis(camera);
         let selectables = this.#getSelectables();
         this.#highlight(mouse, camera, selectables);
         this.#select(mouse);
@@ -433,8 +434,36 @@ class UiControllerSystem extends CriterionSystem {
         return this.scene.system(CameraSystem).getCamera();
     }
 
+    #getUis():UiBlueprint[] {
+        return CriterionBlueprint.blueprints(this.scene, UiBlueprint);
+    }
+
     #getSelectables():SelectableBlueprint[] {
         return CriterionBlueprint.blueprints(this.scene, SelectableBlueprint);
+    }
+
+    #positionUis(camera:CameraBlueprint) {
+        let uis = this.#getUis();
+        for(let ui of uis) {
+            if(ui.uiLayout.absolute) {
+                ui.transform.position.x = camera.transform.position.x + ui.uiLayout.offset.x;
+                ui.transform.position.y = camera.transform.position.y + ui.uiLayout.offset.y;
+            }
+
+            for(let entityId of ui.uiLayout.entities) {
+                let entity = this.scene.entity(entityId);
+                if(!entity)
+                {
+                    ui.uiLayout.entities.delete(entityId);
+                    continue;
+                }
+                let blueprint = new UiBlueprint(entity).load();
+                if(!blueprint.uiLayout || !blueprint.transform)
+                    continue;
+                blueprint.transform.position.x = ui.transform.position.x + blueprint.uiLayout.offset.x;
+                blueprint.transform.position.y = ui.transform.position.y + blueprint.uiLayout.offset.y;
+            }
+        }
     }
 
     #highlight(mouse:CriterionMouse, camera:CameraBlueprint, selectables:SelectableBlueprint[]):SelectableBlueprint {
@@ -507,16 +536,14 @@ class TurnController extends CriterionSystem {
     }
 
     update(deltaTime: number): void {
-        let camera = this.#getCamera();
-        let turnTracker = this.#getTurnTracker();
-        let renderResolution = this.scene.engine.window.renderResolution;
-        turnTracker.transform.position.x = camera.transform.position.x + (renderResolution.width - turnTracker.text.width)/2;
-        turnTracker.transform.position.y = camera.transform.position.y;
-        turnTracker.text.string = `${this.unitTurn} Turn ${this.#turnNumber}\nWave ${this.#waveNumber}`;
+        this.#updateTurnTracker();
     }
 
-    #getTurnTracker() {
-        return CriterionBlueprint.blueprints(this.scene, TurnTrackerDisplayBlueprint)[0];
+    #updateTurnTracker() {
+        let turnTracker = CriterionBlueprint.blueprints(this.scene, TurnTrackerDisplayBlueprint)[0];
+        if(!turnTracker)
+            return;
+        turnTracker.text.string = `${this.unitTurn} Turn ${this.#turnNumber}\nWave ${this.#waveNumber}`;
     }
 
     #getCamera():CameraBlueprint {
@@ -534,5 +561,47 @@ class TurnController extends CriterionSystem {
                 this.#turnNumber++;
                 break;
         }
+    }
+}
+
+class ProgressbarBatcher extends CriterionSystem {
+
+    constructor(scene:CriterionScene) {
+        super(scene);
+    }
+
+    update(deltaTime: number): void {
+        let batchRenderer = this.scene.system(BatchRendererSystem);
+
+        let blueprints = this.#getRenderables();
+        for(let blueprint of blueprints) {
+            //Use the indices we have, otherwise generate them
+            let indices = (blueprint.mesh.indices?.length ?? 0) !== 0
+                ? blueprint.mesh.indices : [];
+            if(indices.length === 0){
+                for(let i = 0; i < blueprint.mesh.vertices.length; i++)
+                    indices.push(i);
+            }
+            batchRenderer.buffer({
+                vertices: blueprint.transformedVertices(1),
+                indicies: indices,
+                uvs: blueprint.mesh.uvs,
+                color: blueprint.progress.secondaryColor,
+                texture: null,
+                layer: blueprint.renderer.layer,
+            });
+            batchRenderer.buffer({
+                vertices: blueprint.transformedVertices(blueprint.progress.value),
+                indicies: indices,
+                uvs: blueprint.mesh.uvs,
+                color: blueprint.progress.primaryColor,
+                texture: null,
+                layer: blueprint.renderer.layer,
+            });
+        }
+    }
+
+    #getRenderables():ProgressbarBlueprint[] {
+        return CriterionBlueprint.blueprints(this.scene, ProgressbarBlueprint);
     }
 }

@@ -187,13 +187,14 @@ class TurnTrackerDisplayBlueprint extends CriterionBlueprint {
     text:TextComponent;
     font:FontComponent;
     turnTracker:TurnTrackerComponent;
+    uiLayout:UiLayoutComponent;
 
     constructor(entity:CriterionEntity) {
         super(entity);
     }
 
     requiredComponents(): (new (...args: any[]) => CriterionComponent)[] {
-        return [TransformComponent, MeshComponent, RendererComponent, SelectorComponent, TextComponent, FontComponent, TurnTrackerComponent];
+        return [TransformComponent, MeshComponent, RendererComponent, SelectorComponent, TextComponent, FontComponent, TurnTrackerComponent, UiLayoutComponent];
     }
 
     intialize(engine:CriterionEngine) {
@@ -221,5 +222,63 @@ class TurnTrackerDisplayBlueprint extends CriterionBlueprint {
 
     static create(scene: CriterionScene): TurnTrackerDisplayBlueprint {
         return TurnTrackerDisplayBlueprint.createEntity(scene, TurnTrackerDisplayBlueprint).intialize(scene.engine);
+    }
+}
+
+class UiBlueprint extends CriterionBlueprint {
+
+    transform:TransformComponent;
+    mesh:MeshComponent;
+    renderer:RendererComponent;
+    uiLayout:UiLayoutComponent;
+    //Optional
+    selector:SelectorComponent;
+
+    constructor(entity:CriterionEntity) {
+        super(entity);
+    }
+
+    requiredComponents(): (new (...args: any[]) => CriterionComponent)[] {
+        return [TransformComponent, MeshComponent, RendererComponent, UiLayoutComponent];
+    }
+
+    dismiss() {
+        this.entity.add(CleanupComponent).destroy = true;
+        for(let entityId of this.uiLayout.entities)
+        {
+            let entity = this.entity.scene.entity(entityId);
+            if(!entity)
+                continue;
+            let ui = new UiBlueprint(entity).load();
+            if(ui.uiLayout)
+                ui.dismiss();
+        }
+    }
+}
+
+class ProgressbarBlueprint extends CriterionBlueprint {
+
+    transform:TransformComponent;
+    mesh:MeshComponent;
+    renderer:RendererComponent;
+    progress:ProgressComponent
+
+    constructor(entity:CriterionEntity) {
+        super(entity);
+    }
+
+    requiredComponents(): (new (...args: any[]) => CriterionComponent)[] {
+        return [TransformComponent, MeshComponent, RendererComponent, ProgressComponent];
+    }
+
+    transformedVertices(percentage:number):Vector3f[] {
+        let results:Vector3f[] = [];
+        let length = this.transform.scale.x * (1 - percentage);
+        let scale = this.transform.scale.subtract(new Vector3f([length, 0, 0]));
+        let transformation = Matrix4f.transformation(this.transform.position, this.transform.rotation, scale);
+        for(let vertex of this.mesh.vertices) {
+            results.push(vertex.transform(transformation));
+        }
+        return results;
     }
 }

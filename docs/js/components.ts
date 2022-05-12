@@ -276,3 +276,28 @@ class TurnTrackerComponent implements CriterionComponent {
 
     }
 }
+
+class UiLayoutComponent implements CriterionComponent
+{
+    offset:Vector2f;
+    entities:Set<number>;
+    absolute:boolean;
+
+    constructor() {
+        this.entities = new Set();
+        this.offset = new Vector2f();
+        this.absolute = false;
+    }
+}
+
+class ProgressComponent implements CriterionComponent {
+    value:number;
+    primaryColor:Vector4f;
+    secondaryColor:Vector4f;
+
+    constructor() {
+        this.value = 0;
+        this.primaryColor = new Vector4f([1, 0, 0, .8]);
+        this.secondaryColor = new Vector4f([.2,.2,.2,.8]);
+    }
+}
