@@ -16,6 +16,7 @@ class TurnDeadGame extends CriterionEngine {
         this.registerComponent(TurnTrackerComponent);
         this.registerComponent(UiLayoutComponent);
         this.registerComponent(ProgressComponent);
+        this.registerComponent(InventoryComponent);
         //create our shader
         let shaderProgram = BatchRendererShader.create(this);
         this.resourceManager.add(shaderProgram);
@@ -23,11 +24,15 @@ class TurnDeadGame extends CriterionEngine {
         let mesh = CriterionMeshUtils.createSquare2DMesh();
         this.resourceManager.add(new Mesh(mesh.indices, mesh.vertices, mesh.minVertex, mesh.maxVertex, mesh.uvs, mesh.normals), "square");
         //Load our texture
-        let texture = await CriterionTextureUtils.loadTexture(this, "resources/images/markers.png", "linear");
-        this.resourceManager.add(texture.texture, ResourceNames.TILE);
+        let tileTexture = await CriterionTextureUtils.loadTexture(this, "resources/images/tiles.png", "linear");
+        this.resourceManager.add(tileTexture.texture, ResourceNames.TILE);
+        let markerTexture = await CriterionTextureUtils.loadTexture(this, "resources/images/markers.png", "linear");
+        this.resourceManager.add(markerTexture.texture, ResourceNames.MARKERS);
         //Load the spriteshet
-        let spriteSheet = new SpriteSheet(texture.texture, texture.image.width, texture.image.height, 64, 32);
-        this.resourceManager.add(spriteSheet, ResourceNames.TILE);
+        let tileSpriteSheet = new SpriteSheet(tileTexture.texture, tileTexture.image.width, tileTexture.image.height, 64, 32);
+        this.resourceManager.add(tileSpriteSheet, ResourceNames.TILE);
+        let markerSpriteSheet = new SpriteSheet(markerTexture.texture, markerTexture.image.width, markerTexture.image.height, 64, 32);
+        this.resourceManager.add(markerSpriteSheet, ResourceNames.MARKERS);
         //load font
         let fontSheet = await CriterionFontUtils.loadFont("resources/fonts/monospaced.fnt");
         let fontTexture = await CriterionTextureUtils.loadTexture(this, "resources/images/monospaced.png", "linear");

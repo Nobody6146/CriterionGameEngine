@@ -19,4 +19,23 @@ class UiBuilder {
         background.progress.value = .4;
         background.mesh.set(scene.engine.resourceManager.get(Mesh, ResourceNames.SQUARE));
     }
+    static addMenu(scene, position) {
+        let menu = CriterionBlueprint.createEntity(scene, UiBlueprint);
+        menu.transform.position.x = position.x;
+        menu.transform.position.y = position.y;
+        return menu;
+    }
+    static addTextButton(scene, width, height) {
+        let button = ButtonBlueprint.create(scene);
+        button.transform.scale = new Vector3f([width, height, 1]);
+        button.sprite.color = new Vector4f([.2, .2, .2, .9]);
+        let textbox = TextboxBlueprint.create(scene);
+        textbox.text.width = width;
+        textbox.text.height = height;
+        button.add(textbox, new Vector2f([0, 0]));
+        return {
+            button,
+            textbox
+        };
+    }
 }

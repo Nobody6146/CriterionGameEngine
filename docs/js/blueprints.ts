@@ -98,6 +98,7 @@ class UnitBlueprint extends CriterionBlueprint {
     mesh:MeshComponent;
     sprite:SpriteComponent;
     renderer:RendererComponent;
+    inventory:InventoryComponent;
     //optional components
     animator:AnimatorComponent;
     selector:SelectorComponent;
@@ -107,7 +108,7 @@ class UnitBlueprint extends CriterionBlueprint {
     }
 
     requiredComponents(): (new (...args: any[]) => CriterionComponent)[] {
-        return [TransformComponent, MeshComponent, SpriteComponent, RendererComponent, AnimatorComponent, SelectorComponent];
+        return [TransformComponent, MeshComponent, SpriteComponent, RendererComponent, AnimatorComponent, SelectorComponent, InventoryComponent];
     }
 
     intialize(engine:CriterionEngine) {
@@ -136,7 +137,24 @@ class UnitBlueprint extends CriterionBlueprint {
         }
         this.selector.select = (entity:CriterionEntity) => {
             console.log("Clicked: " + entity.id);
+            let transform = entity.get(TransformComponent);
+            let menu = UiBuilder.addMenu(entity.scene, new Vector2f([transform.position.x + transform.scale.x, transform.position.y]));
+
+            let position = new Vector2f();
+            for(let slot of this.inventory.slots) {
+                let button = UiBuilder.addTextButton(entity.scene, 300, 40);
+                menu.add(button.button, position);
+                button.textbox.text.string = slot.displayName;
+                position.y += 50;
+            }
         }
+
+        this.inventory.slots = [
+            new WeaponInventorySlot("Weapon 1"),
+            new WeaponInventorySlot("Weapon 2"),
+            new GadgetInventorySlot("Gadget 2")
+        ];
+
         return this;
     }
 
@@ -254,6 +272,12 @@ class UiBlueprint extends CriterionBlueprint {
                 ui.dismiss();
         }
     }
+
+    add(blueprint:UiBlueprint, position:Vector2f) {
+        this.uiLayout.entities.add(blueprint.entity.id);
+        blueprint.uiLayout.offset = new Vector2f(position.array);
+        return blueprint;
+    }
 }
 
 class ProgressbarBlueprint extends CriterionBlueprint {
@@ -280,5 +304,63 @@ class ProgressbarBlueprint extends CriterionBlueprint {
             results.push(vertex.transform(transformation));
         }
         return results;
+    }
+}
+
+class ButtonBlueprint extends UiBlueprint {
+
+    sprite:SpriteComponent;
+
+    constructor(entity:CriterionEntity) {
+        super(entity);
+    }
+
+    requiredComponents(): (new (...args: any[]) => CriterionComponent)[] {
+        return super.requiredComponents().concat(SpriteComponent, SelectorComponent);
+    }
+
+    intialize(engine:CriterionEngine) {
+        this.renderer.layer = RenderLayers.UI;
+        this.mesh.set(engine.resourceManager.get(Mesh, ResourceNames.SQUARE));
+
+        this.selector.highlight = (entity:CriterionEntity) => {
+            this.sprite.color = new Vector4f([.8,.8,.8,.9]);
+        }
+        this.selector.unhighlight = (entity:CriterionEntity) => {
+            this.sprite.color = new Vector4f([.2,.2,.2,.9]);
+        }
+
+        return this;
+    }
+
+    static create(scene: CriterionScene): ButtonBlueprint {
+        return CriterionBlueprint.createEntity(scene, ButtonBlueprint).intialize(scene.engine);
+    }
+}
+
+class TextboxBlueprint extends UiBlueprint {
+    
+    text:TextComponent;
+    font:FontComponent;
+
+    constructor(entity:CriterionEntity) {
+        super(entity);
+    }
+
+    requiredComponents(): (new (...args: any[]) => CriterionComponent)[] {
+        return super.requiredComponents().concat(TextComponent, FontComponent);
+    }
+
+    intialize(engine:CriterionEngine) {
+        //this.transform.scale.array.set([Tile.SIZE.width / 2, Tile.SIZE.height * 2, 1]);
+        this.mesh.set(engine.resourceManager.get(Mesh, ResourceNames.SQUARE));
+        this.renderer.layer = RenderLayers.UI;
+        this.font.fontStyle = engine.resourceManager.get(FontStyle, "monospaced");
+        this.text.horizontalAlignment = "center";
+        return this;
+    }
+
+    static create(scene: CriterionScene): TextboxBlueprint {
+        return TextboxBlueprint.createEntity(scene, TextboxBlueprint).intialize(scene.engine);
     }
 }

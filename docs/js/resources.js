@@ -1,5 +1,6 @@
 class ResourceNames {
     static SQUARE = "square";
+    static MARKERS = "markers";
     static TILE = "tiles";
     static MONOSPACED = "monospaced";
     static Humann = "human";

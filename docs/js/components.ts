@@ -254,19 +254,19 @@ class SelectorComponent implements CriterionComponent {
     }
 
     highlight(entity:CriterionEntity): void {
-
+        entity.scene.engine.logger.debug("Highlighted: " + entity.id);
     }
 
     unhighlight(entity:CriterionEntity): void {
-
+        entity.scene.engine.logger.debug("Unhighlighted: " + entity.id);
     }
 
     select(entity:CriterionEntity): void {
-
+        entity.scene.engine.logger.debug("Selected: " + entity.id);
     }
 
     deselect(entity:CriterionEntity): void {
-
+        entity.scene.engine.logger.debug("Unselected: " + entity.id);
     }
 }
 
@@ -299,5 +299,14 @@ class ProgressComponent implements CriterionComponent {
         this.value = 0;
         this.primaryColor = new Vector4f([1, 0, 0, .8]);
         this.secondaryColor = new Vector4f([.2,.2,.2,.8]);
+    }
+}
+
+class InventoryComponent implements CriterionComponent {
+    
+    slots:InventorySlot[];
+
+    constructor() {
+        this.slots = [];
     }
 }

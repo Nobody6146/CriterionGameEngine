@@ -210,12 +210,16 @@ class SelectorComponent {
         this.selectable = true;
     }
     highlight(entity) {
+        entity.scene.engine.logger.debug("Highlighted: " + entity.id);
     }
     unhighlight(entity) {
+        entity.scene.engine.logger.debug("Unhighlighted: " + entity.id);
     }
     select(entity) {
+        entity.scene.engine.logger.debug("Selected: " + entity.id);
     }
     deselect(entity) {
+        entity.scene.engine.logger.debug("Unselected: " + entity.id);
     }
 }
 class TurnTrackerComponent {
@@ -240,5 +244,11 @@ class ProgressComponent {
         this.value = 0;
         this.primaryColor = new Vector4f([1, 0, 0, .8]);
         this.secondaryColor = new Vector4f([.2, .2, .2, .8]);
+    }
+}
+class InventoryComponent {
+    slots;
+    constructor() {
+        this.slots = [];
     }
 }
