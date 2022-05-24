@@ -21,12 +21,12 @@ class InventorySlot {
     }
 }
 class WeaponInventorySlot extends InventorySlot {
-    constructor(name) {
+    constructor(name = "empty") {
         super("weapon", name);
     }
 }
-class GadgetInventorySlot extends InventorySlot {
-    constructor(name) {
-        super("gadget", name);
+class ItemInventorySlot extends InventorySlot {
+    constructor(name = "empty") {
+        super("item", name);
     }
 }

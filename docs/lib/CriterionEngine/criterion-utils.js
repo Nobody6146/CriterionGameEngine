@@ -142,6 +142,21 @@ class CriterionMeshUtils {
             ],
         };
     }
+    static transformVertices(vertices, transformation) {
+        let results = [];
+        for (let vertex of vertices) {
+            results.push(vertex.transform(transformation));
+        }
+        return results;
+    }
+    static transformTextureCoordinates(uvs, start, end) {
+        let results = [];
+        let frameSize = new Vector2f([end.x - start.x, end.y - start.y]);
+        for (let coordinate of uvs) {
+            results.push(new Vector2f([start.x + frameSize.x * coordinate.x, start.y + frameSize.y * coordinate.y]));
+        }
+        return results;
+    }
 }
 class CriterionModelUtils {
     static buildModel(engine, attributes, indices = []) {

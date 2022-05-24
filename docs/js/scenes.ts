@@ -3,9 +3,9 @@ class BaseLevelScene extends CriterionScene
     async prepare() {
         //Add systems
         this.addSystem(WindowResizerSystem);
-        this.addSystem(PlayerController);
         this.addSystem(CameraSystem);
         this.addSystem(UiControllerSystem);
+        this.addSystem(PlayerController);
         this.addSystem(TurnController);
         this.addSystem(AnimatorSystem);
         this.addSystem(SpriteBatcherSystem);

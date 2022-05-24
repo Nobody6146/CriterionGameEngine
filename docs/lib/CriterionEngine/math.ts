@@ -47,6 +47,18 @@ class Vector2f {
     set height(value:number) {
         this.#array[1] = value;
     }
+    get min() {
+        return this.#array[0];
+    }
+    set min(value:number) {
+        this.#array[0] = value;
+    }
+    get max() {
+        return this.#array[1];
+    }
+    set max(value:number) {
+        this.#array[1] = value;
+    }
     magnitudeSquared(): number {
         return this.x * this.x + this.y * this.y;
     }

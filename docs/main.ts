@@ -5,7 +5,7 @@
 
 try{
     let options = new CriterionEngineOptions();
-    options.renderResolution = new Vector2f([480, 360]);
+    options.renderResolution = new Vector2f([720, 480]);
     options.debugMode = true;
     options.logLevel = 'engine';
     let game = new TurnDeadGame(options);

@@ -18,7 +18,7 @@ class Weapon {
     }
 }
 
-type InventorySlotType = "weapon" | "gadget";
+type InventorySlotType = "weapon" | "item";
 
 class InventorySlot {
     displayName:string;
@@ -31,13 +31,13 @@ class InventorySlot {
 }
 
 class WeaponInventorySlot extends InventorySlot {
-    constructor(name:string) {
+    constructor(name:string = "empty") {
         super("weapon", name);
     }
 }
 
-class GadgetInventorySlot extends InventorySlot {
-    constructor(name:string) {
-        super("gadget", name);
+class ItemInventorySlot extends InventorySlot {
+    constructor(name:string = "empty") {
+        super("item", name);
     }
 }

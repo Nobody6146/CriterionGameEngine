@@ -161,6 +161,23 @@ class CriterionMeshUtils {
             ],
         };
     }
+
+    static transformVertices(vertices:Vector3f[], transformation:Matrix4f):Vector3f[] {
+        let results:Vector3f[] = [];
+        for(let vertex of vertices) {
+            results.push(vertex.transform(transformation));
+        }
+        return results;
+    }
+
+    static transformTextureCoordinates(uvs:Vector2f[], start:Vector2f, end:Vector2f):Vector2f[] {
+        let results:Vector2f[] = [];
+        let frameSize = new Vector2f([end.x - start.x, end.y - start.y])
+        for(let coordinate of uvs) {
+            results.push(new Vector2f([start.x + frameSize.x * coordinate.x, start.y + frameSize.y * coordinate.y]));
+        }
+        return results;
+    }
 }
 
 class CriterionModelUtils {

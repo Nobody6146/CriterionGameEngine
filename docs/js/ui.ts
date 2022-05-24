@@ -25,6 +25,7 @@ class UiBuilder {
         let menu = CriterionBlueprint.createEntity(scene, UiBlueprint);
         menu.transform.position.x = position.x;
         menu.transform.position.y = position.y;
+        menu.uiLayout.container = true;
         return menu;
     }
 
@@ -42,5 +43,56 @@ class UiBuilder {
             button,
             textbox
         };
+    }
+
+    static createActionMenu(entity:CriterionEntity) {
+        let unit = new UnitBlueprint(entity).load();
+        
+        let transform = unit.transform;
+        let menu = UiBuilder.addMenu(entity.scene, new Vector2f([transform.position.x + transform.scale.x, transform.position.y]));
+        let position = new Vector2f();
+
+        let clickoff = UiBuilder.createClickoffButton(entity.scene);
+        clickoff.selector.select = (entity:CriterionEntity) => {
+            clickoff.dismiss();
+            menu.dismiss();
+        }
+
+        let button = UiBuilder.addTextButton(entity.scene, 300, 40);
+        menu.add(button.button, position);
+        button.textbox.text.string = "Interact";
+        position.y += 50;
+        
+        button = UiBuilder.addTextButton(entity.scene, 300, 40);
+        menu.add(button.button, position);
+        button.textbox.text.string = "Walk";
+        position.y += 50;
+        
+        for(let slot of unit.inventory.weaponSlots) {
+            button = UiBuilder.addTextButton(entity.scene, 300, 40);
+            menu.add(button.button, position);
+            button.textbox.text.string = slot.displayName;
+            position.y += 50;
+        };
+        for(let slot of unit.inventory.itemSlots) {
+            button = UiBuilder.addTextButton(entity.scene, 300, 40);
+            menu.add(button.button, position);
+            button.textbox.text.string = slot.displayName;
+            position.y += 50;
+        };
+        button = UiBuilder.addTextButton(entity.scene, 300, 40);
+        menu.add(button.button, position);
+        button.textbox.text.string = "Reload";
+        position.y += 50;
+    }
+
+    static createClickoffButton(scene:CriterionScene) {
+        let blueprint = CriterionBlueprint.createEntity(scene, UiBlueprint);
+        blueprint.mesh.set(CriterionMeshUtils.createSquare2DMesh());
+        let resolution = scene.engine.window.renderResolution;
+        blueprint.transform.scale.array.set([resolution.width,resolution.height, 1]);
+        blueprint.selector = new SelectorComponent();
+        blueprint.uiLayout.absolute = true;
+        return blueprint;
     }
 }

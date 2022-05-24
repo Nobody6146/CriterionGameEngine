@@ -230,10 +230,12 @@ class UiLayoutComponent {
     offset;
     entities;
     absolute;
+    container;
     constructor() {
         this.entities = new Set();
         this.offset = new Vector2f();
         this.absolute = false;
+        this.container = false;
     }
 }
 class ProgressComponent {
@@ -247,8 +249,14 @@ class ProgressComponent {
     }
 }
 class InventoryComponent {
-    slots;
-    constructor() {
-        this.slots = [];
+    weaponSlots;
+    itemSlots;
+    constructor(weaponCount = 0, itemCount = 0) {
+        this.weaponSlots = [];
+        for (let i = 0; i < weaponCount; i++)
+            this.weaponSlots.push(new WeaponInventorySlot());
+        this.itemSlots = [];
+        for (let i = 0; i < itemCount; i++)
+            this.itemSlots.push(new ItemInventorySlot());
     }
 }

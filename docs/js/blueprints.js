@@ -113,21 +113,11 @@ class UnitBlueprint extends CriterionBlueprint {
         };
         this.selector.select = (entity) => {
             console.log("Clicked: " + entity.id);
-            let transform = entity.get(TransformComponent);
-            let menu = UiBuilder.addMenu(entity.scene, new Vector2f([transform.position.x + transform.scale.x, transform.position.y]));
-            let position = new Vector2f();
-            for (let slot of this.inventory.slots) {
-                let button = UiBuilder.addTextButton(entity.scene, 300, 40);
-                menu.add(button.button, position);
-                button.textbox.text.string = slot.displayName;
-                position.y += 50;
-            }
+            UiBuilder.createActionMenu(entity);
         };
-        this.inventory.slots = [
-            new WeaponInventorySlot("Weapon 1"),
-            new WeaponInventorySlot("Weapon 2"),
-            new GadgetInventorySlot("Gadget 2")
-        ];
+        this.inventory.weaponSlots.push(new WeaponInventorySlot());
+        this.inventory.weaponSlots.push(new WeaponInventorySlot());
+        this.inventory.itemSlots.push(new ItemInventorySlot());
         return this;
     }
     static create(scene) {

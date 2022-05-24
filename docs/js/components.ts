@@ -282,11 +282,13 @@ class UiLayoutComponent implements CriterionComponent
     offset:Vector2f;
     entities:Set<number>;
     absolute:boolean;
+    container:boolean;
 
     constructor() {
         this.entities = new Set();
         this.offset = new Vector2f();
         this.absolute = false;
+        this.container = false;
     }
 }
 
@@ -304,9 +306,15 @@ class ProgressComponent implements CriterionComponent {
 
 class InventoryComponent implements CriterionComponent {
     
-    slots:InventorySlot[];
+    weaponSlots:WeaponInventorySlot[];
+    itemSlots:ItemInventorySlot[];
 
-    constructor() {
-        this.slots = [];
+    constructor(weaponCount:number = 0, itemCount:number = 0) {
+        this.weaponSlots = [];
+        for(let i = 0; i < weaponCount; i++)
+            this.weaponSlots.push(new WeaponInventorySlot());
+        this.itemSlots = [];
+        for(let i = 0; i < itemCount; i++)
+            this.itemSlots.push(new ItemInventorySlot());
     }
 }

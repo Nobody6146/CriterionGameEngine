@@ -314,9 +314,8 @@ class TileSystem extends CriterionSystem {
         let frame = this.#spriteSheet.getFrameCoordinates(0);
 
         let transformation = Matrix4f.transformation(new Vector3f(), new Vector3f([1,1,1]), new Vector3f([Tile.SIZE.width, Tile.SIZE.height, 1]));
-
-        let i = 0;
         let tiles = this.#tileMap.tiles;
+        let i = 0;
         for(let floor = 0; floor < tiles.length; floor++) {
             for(let y = 0; y < tiles[floor].length; y++) {
                 for(let x = 0; x < tiles[floor][y].length; x++) {
@@ -348,6 +347,11 @@ class TileSystem extends CriterionSystem {
                 }
             }
         }
+        // console.log("tiles: ", i);
+    }
+
+    #getCamera() {
+        return CriterionBlueprint.blueprints(this.scene, CameraBlueprint)[0];
     }
 
     #transformVertices(vertices:Vector3f[], transformation:Matrix4f, position:Vector3f) {
@@ -399,6 +403,23 @@ class PlayerController extends CriterionSystem {
         else
             this.#mouseDelta = 0;
         // console.log([...mouse.scaledPosition.array]);
+
+        if(this.scene.system(UiControllerSystem).highlighted == null)
+        {
+            let position = Tile.screenPosition(Tile.tilePosition(mouse.position.add(new Vector2f(cameraBlueprint.transform.position.array))));
+            let transformation = Matrix4f.transformation(new Vector3f(position.array), new Vector3f(), new Vector3f([Tile.SIZE.width, Tile.SIZE.height, 1]));
+            let mesh = CriterionMeshUtils.createSquare2DMesh();
+            let spriteSheet = this.scene.engine.resourceManager.get(SpriteSheet, ResourceNames.MARKERS);
+            let frameCoordinates = spriteSheet.getFrameCoordinates(1);
+            this.scene.system(BatchRendererSystem).buffer({
+                vertices: CriterionMeshUtils.transformVertices(mesh.vertices, transformation),
+                indicies: mesh.indices,
+                uvs: CriterionMeshUtils.transformTextureCoordinates(mesh.uvs, frameCoordinates.start, frameCoordinates.end),
+                color: null,
+                texture: spriteSheet.texture,
+                layer: RenderLayers.UI,
+            });
+        }
     }
 
     #getCamera():CameraBlueprint {
@@ -472,8 +493,9 @@ class UiControllerSystem extends CriterionSystem {
             //.transform(camera.transform.transformation)
 
         let highlighted:SelectableBlueprint = null;
-        for(let selectable of selectables)
+        for(let i = selectables.length - 1; i > 0; i--)
         {
+            let selectable = selectables[i];
             if(!selectable.selector.selectable)
                 continue;
             if(selectable.contains(cursor))
@@ -507,6 +529,10 @@ class UiControllerSystem extends CriterionSystem {
                 this.#selected.selector.select(this.#selected.entity);
             this.#selected = null;
         }
+    }
+
+    get highlighted():SelectableBlueprint {
+        return this.#highlighted;
     }
 }
 

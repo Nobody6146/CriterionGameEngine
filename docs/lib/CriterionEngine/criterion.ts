@@ -935,7 +935,7 @@ abstract class CriterionBlueprint
                     return this.#entity.get(componentType);
                 }
                 ,set (value) {
-                    this.#entity.set(componentType, value);
+                    this.#entity.set(value);
                 }
             });
         }
